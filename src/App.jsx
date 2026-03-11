@@ -9,118 +9,78 @@ const formatTime = () => {
   return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
 };
 
-// ─── Smart rotation logic ───────────────────────────────────────────────────
-//
-// Each player has:
-//   gamesPlayed  — total games participated
-//   benchSince   — how many games they've been waiting (incremented each rotation)
-//
-// Priority to enter next game:
-//   1. Sort bench by benchSince DESC (who waited longest)
-//   2. Tie-break: sort by gamesPlayed ASC (who played least overall)
-//
-// Winners stay on court only if their individual benchSince would exceed
-// benchSize (number of people currently on bench). If bench has 3 people,
-// winners can stay at most 1 more game before someone from bench has priority.
-//
-// After each game:
-//   - Losers go to bench (benchSince = 0, gamesPlayed++)
-//   - Winners: benchSince++ (they "age" while on court)
-//   - Bench players who DON'T enter: benchSince++
-//   - Players who enter: benchSince = 0, gamesPlayed++
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
-function pickNextFour(onCourt, bench, gamesPlayed, benchSince) {
-  // onCourt = [winner1, winner2, loser1, loser2]
-  const [w1, w2, l1, l2] = onCourt;
-  const winners = [w1, w2];
-  const losers = [l1, l2];
-
-  // Sort bench by priority: most bench time first, then least games played
+// ─── Smart rotation ──────────────────────────────────────────────────────────
+function pickNextFour(winners, losers, bench, gamesPlayed, benchSince) {
   const sortedBench = [...bench].sort((a, b) => {
     const bsDiff = (benchSince[b] ?? 0) - (benchSince[a] ?? 0);
     if (bsDiff !== 0) return bsDiff;
     return (gamesPlayed[a] ?? 0) - (gamesPlayed[b] ?? 0);
   });
-
   const benchSize = bench.length;
-
-  // Can winners stay? They can stay if their benchSince < benchSize
-  // (meaning not everyone on bench has been waiting longer than them)
-  const winnersCanStay = benchSize < 2 || (benchSince[w1] ?? 0) < benchSize && (benchSince[w2] ?? 0) < benchSize;
+  const [w1, w2] = winners;
+  const winnersCanStay = benchSize < 2 ||
+    ((benchSince[w1] ?? 0) < benchSize && (benchSince[w2] ?? 0) < benchSize);
 
   let nextTeamA, nextTeamB, nextBench;
 
   if (winnersCanStay && benchSize >= 2) {
-    // Winners stay as Team A, top 2 from bench form Team B
     nextTeamA = winners;
     nextTeamB = sortedBench.slice(0, 2);
     nextBench = [...sortedBench.slice(2), ...losers];
   } else if (winnersCanStay && benchSize === 1) {
-    // Only 1 bench player: bench + 1 loser form Team B
     nextTeamA = winners;
     nextTeamB = [sortedBench[0], losers[0]];
     nextBench = [losers[1]];
   } else if (winnersCanStay && benchSize === 0) {
-    // No bench: rematch (losers come back)
     nextTeamA = winners;
     nextTeamB = losers;
     nextBench = [];
   } else {
-    // Winners must sit — top 2 from bench + 1 winner form teams
-    // Pick the winner who waited "more" (higher benchSince) to re-enter first
-    const winnersSorted = [...winners].sort((a, b) => (benchSince[b] ?? 0) - (benchSince[a] ?? 0));
-    const entering = [sortedBench[0], winnersSorted[0]]; // 1 from bench + 1 winner
-    const entering2 = [sortedBench[1] ?? winnersSorted[1], losers[0]];
-    nextTeamA = entering;
-    nextTeamB = [sortedBench[1] ?? losers[0], losers[1] ?? winnersSorted[1]];
-    nextBench = [
-      ...sortedBench.slice(2),
-      ...losers.filter(p => !nextTeamA.includes(p) && !nextTeamB.includes(p)),
-      ...winners.filter(p => !nextTeamA.includes(p) && !nextTeamB.includes(p)),
-    ];
-    // Simpler fallback: if bench >= 2, put both winners on bench
+    // Winners must sit
     if (benchSize >= 2) {
       nextTeamA = sortedBench.slice(0, 2);
       nextTeamB = [...losers];
       nextBench = [...sortedBench.slice(2), ...winners];
+    } else {
+      const winnersSorted = [...winners].sort((a, b) => (benchSince[b] ?? 0) - (benchSince[a] ?? 0));
+      nextTeamA = [sortedBench[0] ?? winnersSorted[0], losers[0]];
+      nextTeamB = [sortedBench[1] ?? winnersSorted[1], losers[1]];
+      nextBench = [];
     }
   }
 
-  // Deduplicate bench (safety)
   const playing = new Set([...nextTeamA, ...nextTeamB]);
-  nextBench = nextBench.filter(p => !playing.has(p));
-  // remove duplicates
-  nextBench = [...new Set(nextBench)];
-
+  nextBench = [...new Set(nextBench.filter(p => !playing.has(p)))];
   return { nextTeamA, nextTeamB, nextBench };
 }
 
-function updateStats(gamesPlayed, benchSince, teamA, teamB, bench, nextTeamA, nextTeamB, nextBench) {
+function updateStats(gamesPlayed, benchSince, nextTeamA, nextTeamB, nextBench) {
   const newGP = { ...gamesPlayed };
   const newBS = { ...benchSince };
-
-  const playing = new Set([...teamA, ...teamB]);
-  const nextPlaying = new Set([...nextTeamA, ...nextTeamB]);
-
-  // Everyone who plays next game: reset benchSince, increment gamesPlayed
-  for (const p of nextPlaying) {
+  for (const p of [...nextTeamA, ...nextTeamB]) {
     newGP[p] = (newGP[p] ?? 0) + 1;
     newBS[p] = 0;
   }
-
-  // Everyone going to bench: increment benchSince
   for (const p of nextBench) {
     newBS[p] = (newBS[p] ?? 0) + 1;
   }
-
   return { newGP, newBS };
 }
 
+// ─── Components ──────────────────────────────────────────────────────────────
 function SetDots({ won, total }) {
-  const dots = Math.max(total, 1);
   return (
     <div style={{ display: "flex", gap: 4, justifyContent: "center", flexWrap: "wrap" }}>
-      {Array.from({ length: dots }).map((_, i) => (
+      {Array.from({ length: Math.max(total, 1) }).map((_, i) => (
         <div key={i} style={{
           width: 12, height: 12, borderRadius: "50%",
           background: i < won ? "#22c55e" : "#ef4444",
@@ -133,6 +93,14 @@ function SetDots({ won, total }) {
   );
 }
 
+function Medal({ rank }) {
+  if (rank === 0) return <span style={{ fontSize: 18 }}>🥇</span>;
+  if (rank === 1) return <span style={{ fontSize: 18 }}>🥈</span>;
+  if (rank === 2) return <span style={{ fontSize: 18 }}>🥉</span>;
+  return <span style={{ fontSize: 14, color: "#334155", fontWeight: 800, minWidth: 24, textAlign: "center" }}>#{rank + 1}</span>;
+}
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
 export default function BeachCam() {
   const [screen, setScreen] = useState("setup");
   const [players, setPlayers] = useState(INITIAL_PLAYERS);
@@ -142,10 +110,16 @@ export default function BeachCam() {
   const [bench, setBench] = useState([]);
   const [setupStep, setSetupStep] = useState(0);
   const [selectingFor, setSelectingFor] = useState(null);
+  const [shuffleFlash, setShuffleFlash] = useState(false);
 
-  // Stats per player: how many games played and how long on bench
   const [gamesPlayed, setGamesPlayed] = useState({});
   const [benchSince, setBenchSince] = useState({});
+
+  // Ranking stats
+  const [playerWins, setPlayerWins] = useState({});       // individual wins
+  const [duoWins, setDuoWins] = useState({});             // key = "P1|P2" sorted
+  const [duoGames, setDuoGames] = useState({});           // games played together
+  const [rankingHistory, setRankingHistory] = useState([]); // match results
 
   const [pointIdxA, setPointIdxA] = useState(0);
   const [pointIdxB, setPointIdxB] = useState(0);
@@ -159,16 +133,43 @@ export default function BeachCam() {
   const [gameLog, setGameLog] = useState([]);
   const [setHistory, setSetHistory] = useState([]);
   const [rotationLog, setRotationLog] = useState([]);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const setsToWin = Math.ceil(bestOf / 2);
+
+  const duoKey = (p1, p2) => [p1, p2].sort().join("|");
 
   const triggerFlash = (team) => {
     setFlash(team);
     setTimeout(() => setFlash(null), 700);
   };
-
   const resetPoints = () => { setPointIdxA(0); setPointIdxB(0); };
 
+  // ── Record match result into ranking ──
+  const recordMatchResult = (winner, tA, tB, sa, sb) => {
+    const winTeam = winner === "A" ? tA : tB;
+    const loseTeam = winner === "A" ? tB : tA;
+    const dk = duoKey(winTeam[0], winTeam[1]);
+    const lk = duoKey(loseTeam[0], loseTeam[1]);
+
+    setPlayerWins(prev => {
+      const n = { ...prev };
+      winTeam.forEach(p => n[p] = (n[p] ?? 0) + 1);
+      return n;
+    });
+    setDuoWins(prev => ({ ...prev, [dk]: (prev[dk] ?? 0) + 1 }));
+    setDuoGames(prev => ({
+      ...prev,
+      [dk]: (prev[dk] ?? 0) + 1,
+      [lk]: (prev[lk] ?? 0) + 1,
+    }));
+    setRankingHistory(prev => [{
+      time: formatTime(),
+      winTeam, loseTeam, sa, sb,
+    }, ...prev].slice(0, 30));
+  };
+
+  // ── Scoring ──
   const addPoint = (team) => {
     if (matchWinner) return;
     triggerFlash(team);
@@ -190,7 +191,9 @@ export default function BeachCam() {
       setSetsA(newSetsA); setSetsB(newSetsB); resetPoints();
       setGameLog(prev => [{ time: formatTime(), team: setWinner, type: "set" }, ...prev].slice(0, 50));
       if (newSetsA >= setsToWin || newSetsB >= setsToWin) {
-        setMatchWinner(newSetsA >= setsToWin ? "A" : "B");
+        const mw = newSetsA >= setsToWin ? "A" : "B";
+        setMatchWinner(mw);
+        recordMatchResult(mw, teamA, teamB, newSetsA, newSetsB);
       }
     } else {
       setPointIdxA(nextIdxA); setPointIdxB(nextIdxB);
@@ -220,8 +223,20 @@ export default function BeachCam() {
     setMatchWinner(null); setSetHistory([]); setGameLog([]);
   };
 
+  // ── Setup ──
   const startSetup = () => {
     setSetupStep(1); setTeamA([]); setTeamB([]); setBench([...players]);
+    setSelectingFor("A");
+  };
+
+  const randomizeDuplas = () => {
+    const shuffled = shuffle(players);
+    const newTeamA = shuffled.slice(0, 2);
+    const newTeamB = shuffled.slice(2, 4);
+    const newBench = shuffled.slice(4);
+    setTeamA(newTeamA); setTeamB(newTeamB); setBench(newBench);
+    setShuffleFlash(true);
+    setTimeout(() => setShuffleFlash(false), 800);
   };
 
   const pickPlayer = (name) => {
@@ -244,10 +259,9 @@ export default function BeachCam() {
 
   const startGame = () => {
     if (teamA.length === 2 && teamB.length === 2) {
-      // Init stats for everyone
       const initGP = {}, initBS = {};
       players.forEach(p => { initGP[p] = 0; initBS[p] = 0; });
-      [...teamA, ...teamB].forEach(p => { initGP[p] = 1; initBS[p] = 0; });
+      [...teamA, ...teamB].forEach(p => { initGP[p] = 1; });
       setGamesPlayed(initGP); setBenchSince(initBS);
       resetMatch(); setScreen("game");
     }
@@ -256,24 +270,9 @@ export default function BeachCam() {
   const doRotation = (winner) => {
     const losers = winner === "A" ? [...teamB] : [...teamA];
     const winners = winner === "A" ? [...teamA] : [...teamB];
-
-    const { nextTeamA, nextTeamB, nextBench } = pickNextFour(
-      [...winners, ...losers], bench, gamesPlayed, benchSince
-    );
-
-    const { newGP, newBS } = updateStats(
-      gamesPlayed, benchSince, teamA, teamB, bench, nextTeamA, nextTeamB, nextBench
-    );
-
-    // Log the rotation
-    const entry = {
-      time: formatTime(),
-      teamA: nextTeamA,
-      teamB: nextTeamB,
-      bench: nextBench,
-    };
-    setRotationLog(prev => [entry, ...prev].slice(0, 20));
-
+    const { nextTeamA, nextTeamB, nextBench } = pickNextFour(winners, losers, bench, gamesPlayed, benchSince);
+    const { newGP, newBS } = updateStats(gamesPlayed, benchSince, nextTeamA, nextTeamB, nextBench);
+    setRotationLog(prev => [{ time: formatTime(), teamA: nextTeamA, teamB: nextTeamB, bench: nextBench }, ...prev].slice(0, 20));
     setTeamA(nextTeamA); setTeamB(nextTeamB); setBench(nextBench);
     setGamesPlayed(newGP); setBenchSince(newBS);
     resetMatch(); setScreen("game");
@@ -288,41 +287,61 @@ export default function BeachCam() {
     }
   };
 
-  const currentLabelA = POINT_LABELS[POINT_SEQUENCE[pointIdxA]] ?? "0";
-  const currentLabelB = POINT_LABELS[POINT_SEQUENCE[pointIdxB]] ?? "0";
-  const totalSetsPlayed = Math.max(setsA + setsB, setsToWin);
+  const resetRanking = () => {
+    setPlayerWins({}); setDuoWins({}); setDuoGames({}); setRankingHistory([]);
+    setConfirmReset(false);
+  };
 
-  // Sort bench for display: most waiting first
+  // ── Derived data for ranking ──
+  const sortedPlayers = [...players].sort((a, b) => (playerWins[b] ?? 0) - (playerWins[a] ?? 0));
+
+  const allDuoKeys = [...new Set([...Object.keys(duoWins), ...Object.keys(duoGames)])];
+  const sortedDuos = allDuoKeys
+    .map(k => ({
+      key: k,
+      names: k.split("|"),
+      wins: duoWins[k] ?? 0,
+      games: duoGames[k] ?? 0,
+      winRate: duoGames[k] > 0 ? Math.round(((duoWins[k] ?? 0) / duoGames[k]) * 100) : 0,
+    }))
+    .sort((a, b) => b.wins - a.wins || b.winRate - a.winRate);
+
   const sortedBenchDisplay = [...bench].sort((a, b) => {
     const bsDiff = (benchSince[b] ?? 0) - (benchSince[a] ?? 0);
     if (bsDiff !== 0) return bsDiff;
     return (gamesPlayed[a] ?? 0) - (gamesPlayed[b] ?? 0);
   });
 
+  const totalSetsPlayed = Math.max(setsA + setsB, setsToWin);
+  const currentLabelA = POINT_LABELS[POINT_SEQUENCE[pointIdxA]] ?? "0";
+  const currentLabelB = POINT_LABELS[POINT_SEQUENCE[pointIdxB]] ?? "0";
+
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <div style={S.root}>
       <div style={S.app}>
+
         {/* HEADER */}
         <div style={S.header}>
           <span style={S.logo}>🏖 BeachCam</span>
           <div style={S.navBtns}>
-            {screen === "game" && (
-              <>
-                <button style={S.navBtn} onClick={() => setScreen("replays")}>🎬 {replays.length}</button>
-                <button style={S.navBtn} onClick={() => setScreen("rotation")}>🔄</button>
-                <button style={S.navBtn} onClick={() => setScreen("setup")}>⚙️</button>
-              </>
-            )}
-            {(screen === "replays" || screen === "rotation") && (
+            {screen === "game" && (<>
+              <button style={S.navBtn} onClick={() => setScreen("ranking")}>🏆</button>
+              <button style={S.navBtn} onClick={() => setScreen("replays")}>🎬 {replays.length}</button>
+              <button style={S.navBtn} onClick={() => setScreen("rotation")}>🔄</button>
+              <button style={S.navBtn} onClick={() => setScreen("setup")}>⚙️</button>
+            </>)}
+            {["replays", "rotation", "ranking"].includes(screen) && (
               <button style={S.navBtn} onClick={() => setScreen("game")}>← Quadra</button>
             )}
           </div>
         </div>
 
-        {/* ===== SETUP 0 ===== */}
+        {/* ══════════════════════ SETUP 0 ══════════════════════ */}
         {screen === "setup" && setupStep === 0 && (
           <div style={S.screen}>
             <h2 style={S.title}>Jogadores da Partida</h2>
+
             <div style={S.settingBox}>
               <span style={S.settingLabel}>🏆 Formato</span>
               <div style={S.settingControls}>
@@ -333,7 +352,7 @@ export default function BeachCam() {
                   </button>
                 ))}
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 12, color: "#475569" }}>Personalizado:</span>
                 <input style={{ ...S.input, width: 64, padding: "6px 10px", textAlign: "center" }}
                   type="number" min={1} max={99} value={bestOf}
@@ -342,6 +361,7 @@ export default function BeachCam() {
               </div>
               <div style={S.settingHint}>🎯 Ganha quem vencer {setsToWin} set{setsToWin > 1 ? "s" : ""} primeiro</div>
             </div>
+
             <div style={S.playerList}>
               {players.map(p => (
                 <div key={p} style={S.playerChip}>
@@ -351,12 +371,14 @@ export default function BeachCam() {
                 </div>
               ))}
             </div>
+
             <div style={S.addRow}>
               <input style={S.input} placeholder="Nome do jogador..." value={newPlayer}
                 onChange={e => setNewPlayer(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && addPlayer()} />
               <button style={S.addBtn} onClick={addPlayer}>+</button>
             </div>
+
             <button style={{ ...S.bigBtn, opacity: players.length >= 4 ? 1 : 0.4 }}
               disabled={players.length < 4} onClick={startSetup}>
               Montar Duplas →
@@ -364,10 +386,30 @@ export default function BeachCam() {
           </div>
         )}
 
-        {/* ===== SETUP 1 ===== */}
+        {/* ══════════════════════ SETUP 1 ══════════════════════ */}
         {screen === "setup" && setupStep === 1 && (
           <div style={S.screen}>
             <h2 style={S.title}>Montar Duplas</h2>
+
+            {/* Random button */}
+            <button
+              style={{ ...S.shuffleBtn, background: shuffleFlash ? "#16a34a" : "#0f2d1a", borderColor: shuffleFlash ? "#22c55e" : "#14532d" }}
+              onClick={randomizeDuplas}
+            >
+              <span style={{ fontSize: 18 }}>🎲</span>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 14 }}>Sortear Duplas</div>
+                <div style={{ fontSize: 11, color: "#86efac", opacity: 0.8 }}>clique para montar aleatoriamente</div>
+              </div>
+              {shuffleFlash && <span style={{ marginLeft: "auto", fontSize: 13, color: "#86efac" }}>✓ sorteado!</span>}
+            </button>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0" }}>
+              <div style={{ flex: 1, height: 1, background: "#1e3a5f" }} />
+              <span style={{ fontSize: 11, color: "#334155", fontWeight: 700 }}>ou monte manualmente</span>
+              <div style={{ flex: 1, height: 1, background: "#1e3a5f" }} />
+            </div>
+
             <div style={S.teamsRow}>
               <div style={{ ...S.teamBox, borderColor: selectingFor === "A" ? "#f59e0b" : "#1e3a5f" }}
                 onClick={() => setSelectingFor("A")}>
@@ -393,24 +435,27 @@ export default function BeachCam() {
                 {teamB.length < 2 && <div style={S.emptySlot}>{selectingFor === "B" ? "← selecione" : "vazio"}</div>}
               </div>
             </div>
+
             {bench.length > 0 && (
               <div style={S.benchSection}>
                 <div style={S.benchLabel}>Disponíveis — toque para escalar</div>
                 <div style={S.benchRow}>
                   {bench.map(p => (
-                    <button key={p} style={{ ...S.benchChip, opacity: selectingFor ? 1 : 0.5 }} onClick={() => pickPlayer(p)}>
+                    <button key={p} style={{ ...S.benchChip, opacity: selectingFor ? 1 : 0.6 }} onClick={() => pickPlayer(p)}>
                       <span style={S.avatarSm}>{p[0]}</span>{p}
                     </button>
                   ))}
                 </div>
               </div>
             )}
+
             <div style={S.addRow}>
               <input style={S.input} placeholder="Adicionar jogador..." value={newPlayer}
                 onChange={e => setNewPlayer(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && addPlayer()} />
               <button style={S.addBtn} onClick={addPlayer}>+</button>
             </div>
+
             <div style={S.rowBtns}>
               <button style={S.ghostBtn} onClick={() => { setSetupStep(0); setTeamA([]); setTeamB([]); setBench([]); }}>← Voltar</button>
               <button style={{ ...S.bigBtn, flex: 1, opacity: teamA.length === 2 && teamB.length === 2 ? 1 : 0.4 }}
@@ -421,7 +466,7 @@ export default function BeachCam() {
           </div>
         )}
 
-        {/* ===== GAME ===== */}
+        {/* ══════════════════════ GAME ══════════════════════ */}
         {screen === "game" && (
           <div style={S.screen}>
             {matchWinner && (
@@ -445,7 +490,6 @@ export default function BeachCam() {
               </div>
             </div>
 
-            {/* Sets */}
             <div style={S.setsRow}>
               <div style={S.setsTeamBlock}>
                 <span style={S.setsTeamName}>{teamA.join(" / ")}</span>
@@ -464,12 +508,9 @@ export default function BeachCam() {
               </div>
             </div>
 
-            {/* Score */}
             <div style={S.scoreSection}>
               <div style={{ ...S.scoreTeam, background: flash === "A" ? "rgba(245,158,11,0.15)" : "transparent" }}>
-                <div style={S.teamNameScore}>
-                  {teamA.map(p => <span key={p} style={S.playerPillA}>{p}</span>)}
-                </div>
+                <div style={S.teamNameScore}>{teamA.map(p => <span key={p} style={S.playerPillA}>{p}</span>)}</div>
                 <div style={{ ...S.scoreNum, color: "#f59e0b" }}>{currentLabelA}</div>
                 <div style={S.scoreControls}>
                   <button style={{ ...S.ptBtn, background: "#f59e0b22", color: "#f59e0b" }} onClick={() => addPoint("A")}>+1</button>
@@ -478,9 +519,7 @@ export default function BeachCam() {
               </div>
               <div style={{ color: "#1e3a5f", fontWeight: 900, fontSize: 24, padding: "0 2px" }}>×</div>
               <div style={{ ...S.scoreTeam, background: flash === "B" ? "rgba(16,185,129,0.15)" : "transparent" }}>
-                <div style={S.teamNameScore}>
-                  {teamB.map(p => <span key={p} style={S.playerPillB}>{p}</span>)}
-                </div>
+                <div style={S.teamNameScore}>{teamB.map(p => <span key={p} style={S.playerPillB}>{p}</span>)}</div>
                 <div style={{ ...S.scoreNum, color: "#10b981" }}>{currentLabelB}</div>
                 <div style={S.scoreControls}>
                   <button style={{ ...S.ptBtn, background: "#10b98122", color: "#10b981" }} onClick={() => addPoint("B")}>+1</button>
@@ -489,7 +528,6 @@ export default function BeachCam() {
               </div>
             </div>
 
-            {/* Point progress */}
             <div style={S.progressRow}>
               {[0, 1, 2, 3].map(i => (
                 <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, flex: 1 }}>
@@ -505,7 +543,6 @@ export default function BeachCam() {
               </div>
             </div>
 
-            {/* Bench with queue info */}
             {sortedBenchDisplay.length > 0 && (
               <div style={S.benchBar}>
                 <span style={S.benchBarLabel}>⏳ Fila:</span>
@@ -513,9 +550,7 @@ export default function BeachCam() {
                   <span key={p} style={S.benchPill}>
                     <span style={{ ...S.avatarXs, background: idx === 0 ? "linear-gradient(135deg,#d97706,#b45309)" : "linear-gradient(135deg,#1d4ed8,#7c3aed)" }}>{p[0]}</span>
                     {p}
-                    <span style={{ fontSize: 9, color: "#475569", marginLeft: 3 }}>
-                      {benchSince[p] > 0 ? `${benchSince[p]}g` : ""}
-                    </span>
+                    {benchSince[p] > 0 && <span style={{ fontSize: 9, color: "#475569", marginLeft: 3 }}>{benchSince[p]}g</span>}
                   </span>
                 ))}
               </div>
@@ -547,7 +582,7 @@ export default function BeachCam() {
                   <div key={i} style={{ display: "flex", gap: 8, fontSize: 11, marginBottom: 3 }}>
                     <span style={{ color: "#334155", fontFamily: "monospace", minWidth: 56 }}>{e.time}</span>
                     <span style={{ color: e.team === "A" ? "#f59e0b" : e.team === "B" ? "#10b981" : "#a78bfa" }}>
-                      {e.type === "set" ? `🏅 Set — Dupla ${e.team}` : e.type === "replay" ? "🎬 replay salvo" : `ponto Dupla ${e.team}`}
+                      {e.type === "set" ? `🏅 Set — Dupla ${e.team}` : e.type === "replay" ? "🎬 replay" : `ponto Dupla ${e.team}`}
                     </span>
                   </div>
                 ))}
@@ -556,71 +591,161 @@ export default function BeachCam() {
           </div>
         )}
 
-        {/* ===== ROTATION LOG ===== */}
+        {/* ══════════════════════ RANKING ══════════════════════ */}
+        {screen === "ranking" && (
+          <div style={S.screen}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2 style={S.title}>🏆 Ranking do Dia</h2>
+              {!confirmReset ? (
+                <button style={S.resetBtn} onClick={() => setConfirmReset(true)}>🗑 Reset</button>
+              ) : (
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button style={{ ...S.resetBtn, background: "#7f1d1d", borderColor: "#ef4444", color: "#fca5a5" }}
+                    onClick={resetRanking}>Confirmar</button>
+                  <button style={S.resetBtn} onClick={() => setConfirmReset(false)}>Cancelar</button>
+                </div>
+              )}
+            </div>
+
+            {/* Individual ranking */}
+            <div style={S.rankCard}>
+              <div style={S.rankCardTitle}>👤 Jogadores — Vitórias individuais</div>
+              {sortedPlayers.length === 0 || sortedPlayers.every(p => !playerWins[p]) ? (
+                <div style={S.rankEmpty}>Nenhuma vitória registrada ainda.</div>
+              ) : (
+                sortedPlayers.map((p, i) => {
+                  const wins = playerWins[p] ?? 0;
+                  const maxWins = playerWins[sortedPlayers[0]] ?? 1;
+                  const pct = maxWins > 0 ? (wins / maxWins) * 100 : 0;
+                  return (
+                    <div key={p} style={S.rankRow}>
+                      <Medal rank={i} />
+                      <span style={S.avatarSm}>{p[0]}</span>
+                      <span style={{ flex: 1, fontWeight: 700, fontSize: 14 }}>{p}</span>
+                      <div style={S.barWrap}>
+                        <div style={{ ...S.barFill, width: `${pct}%`, background: i === 0 ? "#f59e0b" : i === 1 ? "#94a3b8" : i === 2 ? "#cd7c3a" : "#1d4ed8" }} />
+                      </div>
+                      <span style={{ fontWeight: 900, fontSize: 16, minWidth: 28, textAlign: "right", color: wins > 0 ? "#e2e8f0" : "#334155" }}>
+                        {wins}
+                      </span>
+                      <span style={{ fontSize: 10, color: "#475569", marginLeft: 2 }}>v</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Duo ranking */}
+            <div style={S.rankCard}>
+              <div style={S.rankCardTitle}>👥 Duplas — Melhores parceiras</div>
+              {sortedDuos.length === 0 ? (
+                <div style={S.rankEmpty}>Nenhuma dupla registrada ainda.</div>
+              ) : (
+                sortedDuos.map((duo, i) => {
+                  const maxWins = sortedDuos[0].wins || 1;
+                  const pct = maxWins > 0 ? (duo.wins / maxWins) * 100 : 0;
+                  return (
+                    <div key={duo.key} style={S.rankRow}>
+                      <Medal rank={i} />
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                        <span style={{ fontWeight: 700, fontSize: 13 }}>{duo.names.join(" / ")}</span>
+                        <span style={{ fontSize: 10, color: "#475569" }}>{duo.games} jogo{duo.games !== 1 ? "s" : ""} • {duo.winRate}% aproveit.</span>
+                      </div>
+                      <div style={S.barWrap}>
+                        <div style={{ ...S.barFill, width: `${pct}%`, background: i === 0 ? "#f59e0b" : i === 1 ? "#94a3b8" : i === 2 ? "#cd7c3a" : "#1d4ed8" }} />
+                      </div>
+                      <span style={{ fontWeight: 900, fontSize: 16, minWidth: 28, textAlign: "right", color: duo.wins > 0 ? "#e2e8f0" : "#334155" }}>
+                        {duo.wins}
+                      </span>
+                      <span style={{ fontSize: 10, color: "#475569", marginLeft: 2 }}>v</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Match history */}
+            {rankingHistory.length > 0 && (
+              <div style={S.rankCard}>
+                <div style={S.rankCardTitle}>📋 Histórico de partidas</div>
+                {rankingHistory.map((r, i) => (
+                  <div key={i} style={{ marginBottom: 10, paddingBottom: 8, borderBottom: "1px solid #0a1628" }}>
+                    <div style={{ fontSize: 10, color: "#334155", marginBottom: 4 }}>{r.time}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+                      <span style={{ color: "#22c55e", fontWeight: 800 }}>🏆</span>
+                      <span style={{ color: "#f1f5f9", fontWeight: 700 }}>{r.winTeam.join(" / ")}</span>
+                      <span style={{ color: "#334155", fontSize: 12 }}>venceu</span>
+                      <span style={{ color: "#64748b" }}>{r.winTeam.includes(teamA[0]) ? r.sa : r.sb} × {r.winTeam.includes(teamA[0]) ? r.sb : r.sa}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>
+                      vs {r.loseTeam.join(" / ")}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ══════════════════════ ROTATION ══════════════════════ */}
         {screen === "rotation" && (
           <div style={S.screen}>
             <h2 style={S.title}>🔄 Fila & Rotações</h2>
-
-            {/* Current state */}
             <div style={S.rotCard}>
               <div style={S.rotCardTitle}>Partida atual</div>
-              <div style={S.rotTeamsRow}>
-                <div style={S.rotTeam}>
+              <div style={{ display: "flex", gap: 10, justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div style={{ flex: 1 }}>
                   <div style={{ color: "#f59e0b", fontWeight: 800, fontSize: 11, marginBottom: 4 }}>DUPLA A</div>
                   {teamA.map(p => (
-                    <div key={p} style={S.rotPlayer}>
-                      <span style={S.avatarSm}>{p[0]}</span>
-                      <span>{p}</span>
-                      <span style={S.rotStats}>{gamesPlayed[p] ?? 0}j</span>
+                    <div key={p} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, marginBottom: 3 }}>
+                      <span style={S.avatarSm}>{p[0]}</span><span>{p}</span>
+                      <span style={{ fontSize: 10, color: "#334155", marginLeft: "auto" }}>{gamesPlayed[p] ?? 0}j</span>
                     </div>
                   ))}
                 </div>
                 <div style={{ color: "#334155", fontWeight: 900, alignSelf: "center" }}>vs</div>
-                <div style={S.rotTeam}>
+                <div style={{ flex: 1 }}>
                   <div style={{ color: "#10b981", fontWeight: 800, fontSize: 11, marginBottom: 4 }}>DUPLA B</div>
                   {teamB.map(p => (
-                    <div key={p} style={S.rotPlayer}>
-                      <span style={S.avatarSm}>{p[0]}</span>
-                      <span>{p}</span>
-                      <span style={S.rotStats}>{gamesPlayed[p] ?? 0}j</span>
+                    <div key={p} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, marginBottom: 3 }}>
+                      <span style={S.avatarSm}>{p[0]}</span><span>{p}</span>
+                      <span style={{ fontSize: 10, color: "#334155", marginLeft: "auto" }}>{gamesPlayed[p] ?? 0}j</span>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* Bench queue */}
             {sortedBenchDisplay.length > 0 && (
               <div style={S.rotCard}>
                 <div style={S.rotCardTitle}>Fila de espera <span style={{ color: "#334155", fontWeight: 400 }}>(ordem de entrada)</span></div>
                 {sortedBenchDisplay.map((p, idx) => (
-                  <div key={p} style={{ ...S.rotPlayer, background: idx === 0 ? "#0f2d1a" : idx === 1 ? "#0f1d2d" : "transparent", borderRadius: 8, padding: "6px 8px", marginBottom: 4 }}>
+                  <div key={p} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 600, background: idx === 0 ? "#0f2d1a" : idx === 1 ? "#0f1d2d" : "transparent", borderRadius: 8, padding: "6px 8px", marginBottom: 4 }}>
                     <span style={{ color: "#475569", fontWeight: 800, fontSize: 12, minWidth: 20 }}>#{idx + 1}</span>
                     <span style={{ ...S.avatarSm, background: idx < 2 ? "linear-gradient(135deg,#16a34a,#15803d)" : "linear-gradient(135deg,#1d4ed8,#7c3aed)" }}>{p[0]}</span>
                     <span style={{ fontWeight: 700 }}>{p}</span>
-                    <span style={S.rotStats}>{gamesPlayed[p] ?? 0}j jogados</span>
+                    <span style={{ fontSize: 10, color: "#334155", marginLeft: "auto" }}>{gamesPlayed[p] ?? 0}j jogados</span>
                     <span style={{ fontSize: 10, color: "#475569" }}>
-                      {(benchSince[p] ?? 0) > 0 ? `esperando ${benchSince[p]} partida${benchSince[p] > 1 ? "s" : ""}` : "entrou agora"}
+                      {(benchSince[p] ?? 0) > 0 ? `esperando ${benchSince[p]}` : ""}
                     </span>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* All players stats */}
             <div style={S.rotCard}>
               <div style={S.rotCardTitle}>Estatísticas gerais</div>
               {[...players].sort((a, b) => (gamesPlayed[b] ?? 0) - (gamesPlayed[a] ?? 0)).map(p => {
                 const onCourt = teamA.includes(p) || teamB.includes(p);
                 const onBench = bench.includes(p);
                 return (
-                  <div key={p} style={{ ...S.rotPlayer, marginBottom: 5 }}>
+                  <div key={p} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, marginBottom: 5 }}>
                     <span style={S.avatarSm}>{p[0]}</span>
-                    <span style={{ flex: 1, fontWeight: 600 }}>{p}</span>
+                    <span style={{ flex: 1 }}>{p}</span>
                     <span style={{ fontSize: 10, color: onCourt ? "#22c55e" : onBench ? "#f59e0b" : "#475569", fontWeight: 700, marginRight: 6 }}>
                       {onCourt ? "● quadra" : onBench ? "○ banco" : ""}
                     </span>
-                    <span style={S.rotStats}>{gamesPlayed[p] ?? 0} jogos</span>
+                    <span style={{ fontSize: 10, color: "#334155" }}>{gamesPlayed[p] ?? 0} jogos</span>
                   </div>
                 );
               })}
@@ -630,14 +755,12 @@ export default function BeachCam() {
               <div style={S.rotCard}>
                 <div style={S.rotCardTitle}>Histórico de rotações</div>
                 {rotationLog.map((r, i) => (
-                  <div key={i} style={{ marginBottom: 10, paddingBottom: 8, borderBottom: "1px solid #0a1628" }}>
-                    <div style={{ fontSize: 10, color: "#334155", marginBottom: 4 }}>{r.time}</div>
+                  <div key={i} style={{ marginBottom: 8, paddingBottom: 8, borderBottom: "1px solid #0a1628" }}>
+                    <div style={{ fontSize: 10, color: "#334155", marginBottom: 3 }}>{r.time}</div>
                     <div style={{ fontSize: 12, color: "#94a3b8" }}>
                       <span style={{ color: "#f59e0b" }}>{r.teamA.join(" / ")}</span> vs <span style={{ color: "#10b981" }}>{r.teamB.join(" / ")}</span>
                     </div>
-                    {r.bench.length > 0 && (
-                      <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>banco: {r.bench.join(", ")}</div>
-                    )}
+                    {r.bench.length > 0 && <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>banco: {r.bench.join(", ")}</div>}
                   </div>
                 ))}
               </div>
@@ -645,7 +768,7 @@ export default function BeachCam() {
           </div>
         )}
 
-        {/* ===== REPLAYS ===== */}
+        {/* ══════════════════════ REPLAYS ══════════════════════ */}
         {screen === "replays" && (
           <div style={S.screen}>
             <h2 style={S.title}>🎬 Replays Salvos</h2>
@@ -674,25 +797,29 @@ export default function BeachCam() {
             ))}
           </div>
         )}
+
       </div>
     </div>
   );
 }
 
+// ─── Styles ──────────────────────────────────────────────────────────────────
 const S = {
   root: { minHeight: "100vh", background: "#020c1b", display: "flex", justifyContent: "center", alignItems: "flex-start", fontFamily: "'DM Sans','Segoe UI',sans-serif", padding: "0 0 40px" },
   app: { width: "100%", maxWidth: 420, background: "#0d1f35", minHeight: "100vh", display: "flex", flexDirection: "column", color: "#e2e8f0" },
-  header: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: "#061120", borderBottom: "1px solid #1e3a5f" },
-  logo: { fontWeight: 800, fontSize: 18, letterSpacing: "-0.5px", color: "#f0c040" },
-  navBtns: { display: "flex", gap: 8 },
-  navBtn: { background: "#1e3a5f", border: "none", color: "#94a3b8", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 },
-  screen: { padding: "16px 16px", flex: 1, display: "flex", flexDirection: "column", gap: 12 },
+  header: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", background: "#061120", borderBottom: "1px solid #1e3a5f" },
+  logo: { fontWeight: 800, fontSize: 17, letterSpacing: "-0.5px", color: "#f0c040" },
+  navBtns: { display: "flex", gap: 6 },
+  navBtn: { background: "#1e3a5f", border: "none", color: "#94a3b8", borderRadius: 8, padding: "6px 10px", cursor: "pointer", fontSize: 13, fontWeight: 600 },
+  screen: { padding: "16px", flex: 1, display: "flex", flexDirection: "column", gap: 12 },
   title: { margin: 0, fontSize: 20, fontWeight: 800, color: "#f1f5f9", letterSpacing: "-0.5px" },
+
   settingBox: { background: "#061120", borderRadius: 14, padding: "14px 16px", border: "1px solid #1e3a5f", display: "flex", flexDirection: "column", gap: 8 },
   settingLabel: { fontSize: 11, fontWeight: 800, color: "#64748b", letterSpacing: 1, textTransform: "uppercase" },
   settingControls: { display: "flex", gap: 6, flexWrap: "wrap" },
   settingBtn: { border: "none", borderRadius: 8, padding: "6px 12px", fontWeight: 700, fontSize: 13, cursor: "pointer" },
   settingHint: { fontSize: 12, color: "#334155" },
+
   playerList: { display: "flex", flexDirection: "column", gap: 7 },
   playerChip: { display: "flex", alignItems: "center", gap: 10, background: "#122236", borderRadius: 12, padding: "10px 14px", border: "1px solid #1e3a5f" },
   avatar: { width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg,#1d4ed8,#7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, color: "#fff", flexShrink: 0 },
@@ -706,6 +833,9 @@ const S = {
   bigBtn: { background: "linear-gradient(135deg,#1d4ed8,#7c3aed)", border: "none", color: "#fff", borderRadius: 12, padding: "14px", fontWeight: 800, fontSize: 16, cursor: "pointer" },
   ghostBtn: { background: "#122236", border: "1px solid #1e3a5f", color: "#94a3b8", borderRadius: 12, padding: "14px 16px", fontWeight: 700, fontSize: 14, cursor: "pointer" },
   rowBtns: { display: "flex", gap: 10, alignItems: "stretch" },
+
+  shuffleBtn: { display: "flex", alignItems: "center", gap: 12, background: "#0f2d1a", border: "2px solid #14532d", borderRadius: 14, padding: "14px 16px", cursor: "pointer", color: "#86efac", transition: "all 0.3s", textAlign: "left" },
+
   teamsRow: { display: "flex", gap: 10, alignItems: "flex-start" },
   teamBox: { flex: 1, background: "#0a192e", borderRadius: 14, padding: 12, border: "2px solid #1e3a5f", cursor: "pointer", transition: "border-color 0.2s", minHeight: 80 },
   teamLabel: { fontWeight: 800, fontSize: 11, color: "#64748b", marginBottom: 6, letterSpacing: 1, textTransform: "uppercase" },
@@ -716,17 +846,21 @@ const S = {
   benchLabel: { fontWeight: 800, fontSize: 11, color: "#64748b", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 },
   benchRow: { display: "flex", flexWrap: "wrap", gap: 7 },
   benchChip: { display: "flex", alignItems: "center", background: "#122236", border: "1px solid #1e3a5f", borderRadius: 20, padding: "5px 10px", color: "#cbd5e1", fontWeight: 600, fontSize: 12, cursor: "pointer" },
+
   winnerBanner: { background: "linear-gradient(135deg,#1d4ed8,#7c3aed)", borderRadius: 16, padding: "18px 16px", display: "flex", flexDirection: "column", alignItems: "center", gap: 7, border: "1px solid #7c3aed" },
   winnerBtn: { background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", color: "#fff", borderRadius: 10, padding: "8px 14px", fontWeight: 700, fontSize: 13, cursor: "pointer" },
+
   cameraBox: { background: "#000", borderRadius: 14, overflow: "hidden", aspectRatio: "16/9", position: "relative", border: "2px solid #1e3a5f" },
   cameraLabel: { position: "absolute", top: 10, left: 12, fontSize: 10, fontWeight: 700, color: "#475569", letterSpacing: 1, zIndex: 2 },
   cameraFake: { width: "100%", height: "100%", background: "radial-gradient(ellipse at center,#0d1f35 0%,#000 100%)", display: "flex", alignItems: "flex-end", justifyContent: "flex-end", padding: 10 },
   recDot: { width: 7, height: 7, borderRadius: "50%", background: "#ef4444", marginRight: 4 },
   recText: { fontSize: 11, color: "#ef4444", fontWeight: 700 },
+
   setsRow: { display: "flex", alignItems: "center", background: "#061120", borderRadius: 14, overflow: "hidden", border: "1px solid #1e3a5f" },
   setsTeamBlock: { flex: 1, padding: "10px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 5 },
   setsTeamName: { fontSize: 10, color: "#475569", fontWeight: 700, textAlign: "center", lineHeight: 1.2 },
   setsCount: { fontSize: 11, fontWeight: 800, color: "#64748b" },
+
   scoreSection: { display: "flex", alignItems: "center", background: "#061120", borderRadius: 16, overflow: "hidden", border: "1px solid #1e3a5f" },
   scoreTeam: { flex: 1, padding: "12px 8px", transition: "background 0.3s", display: "flex", flexDirection: "column", alignItems: "center", gap: 5 },
   teamNameScore: { display: "flex", gap: 3, flexWrap: "wrap", justifyContent: "center" },
@@ -736,19 +870,28 @@ const S = {
   scoreControls: { display: "flex", gap: 5 },
   ptBtn: { border: "none", borderRadius: 8, padding: "7px 12px", fontWeight: 800, fontSize: 15, cursor: "pointer" },
   progressRow: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: "#061120", borderRadius: 10, border: "1px solid #1e3a5f" },
+
   benchBar: { display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap", background: "#0a192e", borderRadius: 10, padding: "7px 10px", border: "1px solid #1e3a5f" },
   benchBarLabel: { fontSize: 11, color: "#475569", fontWeight: 700 },
   benchPill: { display: "inline-flex", alignItems: "center", background: "#122236", borderRadius: 20, padding: "3px 9px", fontSize: 11, fontWeight: 600, color: "#94a3b8" },
+
   replayBtn: { flex: 1, border: "none", borderRadius: 12, padding: "13px", color: "#fff", fontWeight: 800, fontSize: 14, cursor: "pointer", transition: "background 0.3s" },
+
   setHistoryBox: { background: "#061120", borderRadius: 12, padding: "10px 14px", border: "1px solid #1e3a5f" },
   setHistoryTitle: { fontSize: 10, fontWeight: 800, color: "#475569", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 },
   setHistoryRow: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", borderBottom: "1px solid #0a1628" },
+
   replayCard: { background: "#0a192e", borderRadius: 14, padding: 14, border: "1px solid #1e3a5f", display: "flex", flexDirection: "column", gap: 7 },
-  // Rotation screen
+
   rotCard: { background: "#061120", borderRadius: 14, padding: "12px 14px", border: "1px solid #1e3a5f", display: "flex", flexDirection: "column", gap: 6 },
   rotCardTitle: { fontSize: 11, fontWeight: 800, color: "#475569", letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 },
-  rotTeamsRow: { display: "flex", gap: 10, justifyContent: "space-between", alignItems: "flex-start" },
-  rotTeam: { flex: 1, display: "flex", flexDirection: "column" },
-  rotPlayer: { display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600 },
-  rotStats: { fontSize: 10, color: "#334155", marginLeft: "auto", fontWeight: 700 },
+
+  // Ranking
+  rankCard: { background: "#061120", borderRadius: 14, padding: "14px", border: "1px solid #1e3a5f", display: "flex", flexDirection: "column", gap: 8 },
+  rankCardTitle: { fontSize: 11, fontWeight: 800, color: "#64748b", letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 },
+  rankEmpty: { color: "#334155", fontSize: 13, textAlign: "center", padding: "12px 0" },
+  rankRow: { display: "flex", alignItems: "center", gap: 8, padding: "4px 0" },
+  barWrap: { width: 60, height: 6, background: "#122236", borderRadius: 3, overflow: "hidden", flexShrink: 0 },
+  barFill: { height: "100%", borderRadius: 3, transition: "width 0.5s ease" },
+  resetBtn: { background: "#122236", border: "1px solid #1e3a5f", color: "#64748b", borderRadius: 8, padding: "6px 12px", fontWeight: 700, fontSize: 12, cursor: "pointer" },
 };
