@@ -211,12 +211,46 @@ export function useBeachCam() {
     await playersService.remove(name);
   };
 
+  const addPlayerMidGame = async (name) => {
+    const trimmed = name.trim();
+    if (!trimmed || players.includes(trimmed)) return;
+
+    setPlayers(p => [...p, trimmed]);
+    await playersService.add(trimmed);
+
+    // Inicializa estatísticas de sessão zeradas
+    setGamesPlayed(prev => ({ ...prev, [trimmed]: 0 }));
+    // benchSince = 1 pra ele já entrar com alguma prioridade (não vai competir com quem está esperando há mais rodadas)
+    setBenchSince(prev => ({ ...prev, [trimmed]: 1 }));
+
+    // Insere no final da fila
+    setBench(prev => [...prev, trimmed]);
+  };
+
   const resetRanking = async () => {
     try {
       await rankingService.reset();
       setRankingRows([]); setMatchHistory([]); setDuoStats({});
       setSyncStatus("synced");
     } catch { setSyncStatus("error"); }
+  };
+
+  const endSession = () => {
+    // Limpa todo o estado de jogo local
+    setScreen("setup");
+    setTeamA([]);
+    setTeamB([]);
+    setBench([]);
+    setGamesPlayed({});
+    setBenchSince({});
+    setPointIdxA(0);
+    setPointIdxB(0);
+    setSetsA(0);
+    setSetsB(0);
+    setMatchWinner(null);
+    setMatchSetHistory([]);
+    setGameLog([]);
+    // Não limpa players nem ranking — só o estado da sessão atual
   };
 
   const resetMatch = useCallback((sync = true) => {
@@ -330,6 +364,7 @@ export function useBeachCam() {
     flash, gameLog, matchSetHistory,
     syncStatus,
     activeLiveMatch, joinLiveMatch,
-    startGame, doRotation, resetMatch, triggerFlash
+    startGame, doRotation, resetMatch, triggerFlash,
+    endSession
   };
 }

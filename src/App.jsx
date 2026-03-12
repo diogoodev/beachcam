@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useBeachCam } from "./hooks/useBeachCam";
 import { SetupScreen } from "./components/SetupScreen";
 import { GameScreen } from "./components/GameScreen";
@@ -78,12 +78,45 @@ export default function App() {
 
       {/* FLOATING ACTION IF IN GAME TO GO BACK */}
       {h.screen === "game" && (
-         <button 
-           onClick={() => h.setScreen("setup")}
-           className="fixed top-24 left-4 bg-black/50 p-2 rounded-full backdrop-blur-md z-50 text-white/70 hover:text-white"
-         >
-           <span className="material-symbols-outlined">arrow_back</span>
-         </button>
+        <EndSessionButton onEndSession={h.endSession} onGoSetup={() => h.setScreen("setup")} />
+      )}
+    </div>
+  );
+}
+
+function EndSessionButton({ onEndSession, onGoSetup }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="fixed top-24 left-4 z-50">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="bg-black/50 p-2 rounded-full backdrop-blur-md text-white/70 hover:text-white"
+      >
+        <span className="material-symbols-outlined">arrow_back</span>
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0" onClick={() => setOpen(false)} />
+          <div className="absolute top-12 left-0 bg-[#111] border border-white/10 rounded-2xl overflow-hidden shadow-2xl w-44 z-50">
+            <button
+              onClick={() => { onGoSetup(); setOpen(false); }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-white hover:bg-white/10 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">settings</span>
+              Configurar
+            </button>
+            <div className="h-px bg-white/10" />
+            <button
+              onClick={() => { onEndSession(); setOpen(false); }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-400 hover:bg-red-500/10 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">logout</span>
+              Encerrar sessão
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
