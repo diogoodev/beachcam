@@ -198,11 +198,55 @@ export default function BeachCam() {
     } catch {}
   }, []);
 
+  // ── Sync Live State to Supabase ─────────────────────────────────────────────
+  const syncLiveState = async (newStateUpdate) => {
+    try {
+      const payload = {
+        screen, teamA, teamB, bench,
+        pointIdxA, pointIdxB, setsA, setsB,
+        bestOf, matchWinner, gamesPlayed, benchSince,
+        ...newStateUpdate
+      };
+      await supabase
+        .from("live_match")
+        .update({ state: payload, updated_at: new Date().toISOString() })
+        .eq("id", 1);
+    } catch (error) {
+      console.error("Erro ao sincronizar estado:", error);
+    }
+  };
+
+  const applyRemoteState = useCallback((st) => {
+    if (st.screen) setScreen(st.screen);
+    if (st.teamA) setTeamA(st.teamA);
+    if (st.teamB) setTeamB(st.teamB);
+    if (st.bench) setBench(st.bench);
+    if (st.pointIdxA !== undefined) setPointIdxA(st.pointIdxA);
+    if (st.pointIdxB !== undefined) setPointIdxB(st.pointIdxB);
+    if (st.setsA !== undefined) setSetsA(st.setsA);
+    if (st.setsB !== undefined) setSetsB(st.setsB);
+    if (st.bestOf !== undefined) setBestOf(st.bestOf);
+    if (st.matchWinner !== undefined) setMatchWinner(st.matchWinner);
+    if (st.gamesPlayed) setGamesPlayed(st.gamesPlayed);
+    if (st.benchSince) setBenchSince(st.benchSince);
+  }, []);
+
+  const loadLiveMatch = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.from("live_match").select("state").eq("id", 1).single();
+      if (error) throw error;
+      if (data && data.state) {
+        applyRemoteState(data.state);
+      }
+    } catch {}
+  }, [applyRemoteState]);
+
   useEffect(() => {
     setSyncStatus("syncing");
     loadPlayers();
     loadRanking();
     loadMatches();
+    loadLiveMatch();
 
     // Realtime subscriptions
     const rankCh = supabase.channel("ranking-changes")
@@ -217,12 +261,19 @@ export default function BeachCam() {
       .on("postgres_changes", { event:"*", schema:"public", table:"players" }, () => loadPlayers())
       .subscribe();
 
+    const liveMatchCh = supabase.channel("live-match-changes")
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "live_match", filter: "id=eq.1" }, (payload) => {
+        applyRemoteState(payload.new.state);
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(rankCh);
       supabase.removeChannel(matchCh);
       supabase.removeChannel(playerCh);
+      supabase.removeChannel(liveMatchCh);
     };
-  }, [loadPlayers, loadRanking, loadMatches]);
+  }, [loadPlayers, loadRanking, loadMatches, loadLiveMatch, applyRemoteState]);
 
   // ── Save match to Supabase ───────────────────────────────────────────────────
   const saveMatchToSupabase = async (winner, tA, tB, sa, sb) => {
@@ -313,21 +364,32 @@ export default function BeachCam() {
       }]);
       setSetsA(newSA); setSetsB(newSB); resetPoints();
       setGameLog(prev => [{ time: formatTime(), team: sw, type:"set" }, ...prev].slice(0,50));
+      
+      let mw = null;
       if (newSA >= setsToWin || newSB >= setsToWin) {
-        const mw = newSA >= setsToWin ? "A" : "B";
+        mw = newSA >= setsToWin ? "A" : "B";
         setMatchWinner(mw);
         saveMatchToSupabase(mw, teamA, teamB, newSA, newSB);
       }
+
+      syncLiveState({
+        pointIdxA: 0, pointIdxB: 0,
+        setsA: newSA, setsB: newSB,
+        matchWinner: mw
+      });
     } else {
       setPointIdxA(nextIdxA); setPointIdxB(nextIdxB);
       setGameLog(prev => [{ time: formatTime(), team, type:"point" }, ...prev].slice(0,50));
+      syncLiveState({ pointIdxA: nextIdxA, pointIdxB: nextIdxB });
     }
   };
 
   const removePoint = (team) => {
     if (matchWinner) return;
-    if (team === "A" && pointIdxA > 0) setPointIdxA(i => i-1);
-    if (team === "B" && pointIdxB > 0) setPointIdxB(i => i-1);
+    let nextA = pointIdxA, nextB = pointIdxB;
+    if (team === "A" && pointIdxA > 0) { nextA = pointIdxA - 1; setPointIdxA(nextA); }
+    if (team === "B" && pointIdxB > 0) { nextB = pointIdxB - 1; setPointIdxB(nextB); }
+    syncLiveState({ pointIdxA: nextA, pointIdxB: nextB });
   };
 
   const saveReplay = () => {
@@ -340,9 +402,10 @@ export default function BeachCam() {
     triggerFlash("replay");
   };
 
-  const resetMatch = () => {
+  const resetMatch = (sync = true) => {
     resetPoints(); setSetsA(0); setSetsB(0);
     setMatchWinner(null); setSetHistory([]); setGameLog([]);
+    if (sync) syncLiveState({ pointIdxA: 0, pointIdxB: 0, setsA: 0, setsB: 0, matchWinner: null });
   };
 
   // ── Setup ─────────────────────────────────────────────────────────────────────
@@ -378,7 +441,16 @@ export default function BeachCam() {
       players.forEach(p => { initGP[p] = 0; initBS[p] = 0; });
       [...teamA, ...teamB].forEach(p => { initGP[p] = 1; });
       setGamesPlayed(initGP); setBenchSince(initBS);
-      resetMatch(); setScreen("game");
+      resetMatch(false); setScreen("game");
+      syncLiveState({
+        screen: "game",
+        teamA, teamB, bench,
+        pointIdxA: 0, pointIdxB: 0,
+        setsA: 0, setsB: 0,
+        matchWinner: null,
+        gamesPlayed: initGP,
+        benchSince: initBS
+      });
     }
   };
 
@@ -390,7 +462,16 @@ export default function BeachCam() {
     setRotationLog(prev => [{ time:formatTime(), teamA:nextTeamA, teamB:nextTeamB, bench:nextBench }, ...prev].slice(0,20));
     setTeamA(nextTeamA); setTeamB(nextTeamB); setBench(nextBench);
     setGamesPlayed(newGP); setBenchSince(newBS);
-    resetMatch(); setScreen("game");
+    resetMatch(false); setScreen("game");
+    syncLiveState({
+      screen: "game",
+      teamA: nextTeamA, teamB: nextTeamB, bench: nextBench,
+      pointIdxA: 0, pointIdxB: 0,
+      setsA: 0, setsB: 0,
+      matchWinner: null,
+      gamesPlayed: newGP,
+      benchSince: newBS
+    });
   };
 
   const addPlayer = async () => {
