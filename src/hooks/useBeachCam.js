@@ -319,7 +319,7 @@ export function useBeachCam() {
 
   return {
     screen, setScreen,
-    players, addPlayer, removePlayer,
+    players, addPlayer, removePlayer, addPlayerMidGame,
     teamA, setTeamA, teamB, setTeamB, bench, setBench,
     pointIdxA, pointIdxB, setsA, setsB,
     addPoint, removePoint,
