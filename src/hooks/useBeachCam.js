@@ -60,14 +60,14 @@ export function useBeachCam() {
   const benchSinceRef = useRef(benchSince);
   const rankingRowsRef = useRef(rankingRows);
 
-  useEffect(() => { screenRef.current = screen; }, [screen]);
-  useEffect(() => { teamARef.current = teamA; }, [teamA]);
-  useEffect(() => { teamBRef.current = teamB; }, [teamB]);
-  useEffect(() => { benchRef.current = bench; }, [bench]);
-  useEffect(() => { bestOfRef.current = bestOf; }, [bestOf]);
-  useEffect(() => { gamesPlayedRef.current = gamesPlayed; }, [gamesPlayed]);
-  useEffect(() => { benchSinceRef.current = benchSince; }, [benchSince]);
-  useEffect(() => { rankingRowsRef.current = rankingRows; }, [rankingRows]);
+  screenRef.current = screen;
+  teamARef.current = teamA;
+  teamBRef.current = teamB;
+  benchRef.current = bench;
+  bestOfRef.current = bestOf;
+  gamesPlayedRef.current = gamesPlayed;
+  benchSinceRef.current = benchSince;
+  rankingRowsRef.current = rankingRows;
 
   const setsToWin = Math.ceil(bestOf / 2);
 

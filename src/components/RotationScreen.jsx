@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getInitials } from '../utils/helpers';
 
 export function RotationScreen({ h }) {
   const [showFullBench, setShowFullBench] = useState(false);
@@ -22,14 +23,6 @@ export function RotationScreen({ h }) {
       topPlayer = p;
     }
   });
-
-  // Helper for initials
-  const getInitials = (name) => {
-    if (!name) return "";
-    const parts = name.split(" ");
-    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
 
   return (
     <div className="min-h-screen p-4 md:p-6 pb-24 flex flex-col pt-8 text-white relative z-10">

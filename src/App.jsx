@@ -69,16 +69,8 @@ export default function App() {
             onClick={() => h.setScreen("rotation")}
             className={`flex flex-col items-center gap-1 transition-colors ${h.screen === "rotation" ? "text-[var(--neon-blue)]" : "text-white/50 hover:text-white"}`}
           >
-            <span className="material-symbols-outlined text-2xl">history</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest">Histórico</span>
-          </button>
-          
-          <button 
-            onClick={() => h.setScreen("setup")}
-            className="flex flex-col items-center gap-1 transition-colors text-white/50 hover:text-white"
-          >
-            <span className="material-symbols-outlined text-2xl">settings</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest">Configs</span>
+            <span className="material-symbols-outlined text-2xl">dashboard</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest">Status</span>
           </button>
         </nav>
 

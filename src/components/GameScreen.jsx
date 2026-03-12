@@ -2,7 +2,6 @@ import React from 'react';
 import { POINT_SEQUENCE, POINT_LABELS } from '../utils/constants';
 
 export function GameScreen({ h }) {
-  const totalSetsPlayed = Math.max(h.setsA + h.setsB, h.setsToWin);
   const currentLabelA   = POINT_LABELS[POINT_SEQUENCE[h.pointIdxA]] ?? "0";
   const currentLabelB   = POINT_LABELS[POINT_SEQUENCE[h.pointIdxB]] ?? "0";
 
@@ -63,7 +62,7 @@ export function GameScreen({ h }) {
         </div>
       )}
 
-      <main className="flex-1 w-full max-w-sm px-4 flex flex-col justify-center gap-10 relative z-10 w-full h-full">
+      <main className="flex-1 w-full max-w-sm px-4 flex flex-col justify-center gap-10 relative z-10 h-full">
         
         {/* Team 1 (Blue) */}
         <section className="flex flex-col items-center gap-6 relative group">

@@ -12,10 +12,14 @@ export const playersService = {
     return data.map(p => p.name);
   },
   async add(name) {
-    return await supabase.from("players").insert({ name });
+    const { data, error } = await supabase.from("players").insert({ name });
+    if (error) throw error;
+    return data;
   },
   async remove(name) {
-    return await supabase.from("players").delete().eq("name", name);
+    const { data, error } = await supabase.from("players").delete().eq("name", name);
+    if (error) throw error;
+    return data;
   }
 };
 
@@ -46,11 +50,13 @@ export const matchesService = {
     return data || [];
   },
   async save(winner, winTeam, loseTeam, sW, sL) {
-    return await supabase.from("matches").insert({
+    const { data, error } = await supabase.from("matches").insert({
       winner_1: winTeam[0], winner_2: winTeam[1],
       loser_1:  loseTeam[0], loser_2: loseTeam[1],
       sets_winner: sW, sets_loser: sL,
     });
+    if (error) throw error;
+    return data;
   }
 };
 
@@ -61,9 +67,11 @@ export const liveMatchService = {
     return data?.state;
   },
   async sync(state) {
-    return await supabase
+    const { data, error } = await supabase
       .from("live_match")
       .update({ state, updated_at: new Date().toISOString() })
       .eq("id", 1);
+    if (error) throw error;
+    return data;
   }
 };

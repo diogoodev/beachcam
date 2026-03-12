@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { getInitials } from '../utils/helpers';
 
 export function RankingScreen({ h }) {
   const [confirmReset, setConfirmReset] = useState(false);
@@ -31,13 +32,6 @@ export function RankingScreen({ h }) {
       .sort((a,b) => b.wins - a.wins);
   }, [h.matchHistory]);
 
-  const getInitials = (name) => {
-    if (!name) return "";
-    const parts = name.split(" ");
-    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
-
   const renderPodium = (items, isDuo = false) => {
     if (items.length === 0) return <div className="text-gray-500 text-center py-4 italic">Sem dados suficientes</div>;
 
@@ -65,7 +59,7 @@ export function RankingScreen({ h }) {
             <div className="mt-3 text-[10px] md:text-xs font-bold text-white text-center leading-tight uppercase line-clamp-2">
               {isDuo ? second.name : second.player_name}
             </div>
-            {isDuo && <div className="mt-2 text-[10px] text-[var(--neon-blue)] font-bold">WR {Math.round((second.wins/second.games)*100)}%</div>}
+            {isDuo && <div className="mt-2 text-[10px] text-[var(--neon-blue)] font-bold">WR {second.games > 0 ? Math.round((second.wins/second.games)*100) : 0}%</div>}
           </div>
         )}
 
@@ -88,7 +82,7 @@ export function RankingScreen({ h }) {
             <div className="mt-4 text-xs md:text-sm font-black text-white text-center leading-tight uppercase">
               {isDuo ? first.name : first.player_name}
             </div>
-            {isDuo && <div className="mt-2 text-[11px] bg-[var(--neon-green)] text-black px-3 py-0.5 rounded-full font-black">WR {Math.round((first.wins/first.games)*100)}%</div>}
+            {isDuo && <div className="mt-2 text-[11px] bg-[var(--neon-green)] text-black px-3 py-0.5 rounded-full font-black">WR {first.games > 0 ? Math.round((first.wins/first.games)*100) : 0}%</div>}
           </div>
         )}
 
@@ -110,7 +104,7 @@ export function RankingScreen({ h }) {
             <div className="mt-3 text-[10px] md:text-xs font-bold text-white text-center leading-tight uppercase line-clamp-2">
               {isDuo ? third.name : third.player_name}
             </div>
-            {isDuo && <div className="mt-2 text-[10px] text-white/50 font-bold">WR {Math.round((third.wins/third.games)*100)}%</div>}
+            {isDuo && <div className="mt-2 text-[10px] text-white/50 font-bold">WR {third.games > 0 ? Math.round((third.wins/third.games)*100) : 0}%</div>}
           </div>
         )}
       </div>
@@ -145,7 +139,7 @@ export function RankingScreen({ h }) {
                 </div>
               </div>
               <div className="text-[var(--neon-blue)] font-black text-lg">
-                {isDuo ? `${Math.round((item.wins/item.games)*100)}%` : item.wins}
+                {isDuo ? `${item.games > 0 ? Math.round((item.wins/item.games)*100) : 0}%` : item.wins}
               </div>
             </div>
           );
