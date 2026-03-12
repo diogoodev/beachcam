@@ -18,12 +18,14 @@ export default function App() {
           <span className="material-symbols-outlined text-[var(--neon-green)] text-3xl">sports_tennis</span>
           <h1 className="heading-font text-2xl font-black tracking-tighter italic">BeachCam</h1>
         </div>
-        <div className="px-3 py-1 bg-black/40 backdrop-blur-md rounded-full border border-white/20 flex items-center gap-2">
-          {h.syncStatus === "synced" && <div className="w-2 h-2 rounded-full bg-[var(--neon-green)] animate-pulse"></div>}
+        <div className={`px-3 py-1 backdrop-blur-md rounded-full border flex items-center gap-2 transition-colors ${h.syncStatus === "error" ? "bg-red-500/20 border-red-500/50" : "bg-black/40 border-white/20"}`}>
+          {h.syncStatus === "synced" && <div className="w-2 h-2 rounded-full bg-[var(--neon-green)] animate-pulse shadow-[0_0_10px_var(--neon-green)]"></div>}
           {h.syncStatus === "syncing" && <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></div>}
-          {h.syncStatus === "error" && <div className="w-2 h-2 rounded-full bg-red-500"></div>}
+          {h.syncStatus === "error" && <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_#ef4444]"></div>}
           {h.syncStatus === "offline" && <div className="w-2 h-2 rounded-full bg-gray-500"></div>}
-          <span className="text-[10px] uppercase font-bold tracking-widest">{h.syncStatus}</span>
+          <span className={`text-[10px] uppercase font-black tracking-widest ${h.syncStatus === "error" ? "text-red-400" : ""}`}>
+            {h.syncStatus === "error" ? "OFFLINE" : h.syncStatus}
+          </span>
         </div>
       </header>
 

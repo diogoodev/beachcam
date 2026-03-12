@@ -15,12 +15,18 @@ export function RotationScreen({ h }) {
 
   // Player Stats for Highlight
   let topPlayer = null;
-  let maxGames = -1;
-  h.players.forEach(p => {
-    const games = h.gamesPlayed[p] || 0;
-    if (games > maxGames) {
-      maxGames = games;
-      topPlayer = p;
+  let topWR = -1;
+  let topWinsFallback = -1;
+
+  h.rankingRows.forEach(row => {
+    // Only consider players who are playing today (or simply all in db with games)
+    if (row.games > 0) {
+      const wr = Math.round((row.wins / row.games) * 100);
+      if (wr > topWR || (wr === topWR && row.wins > topWinsFallback)) {
+        topWR = wr;
+        topWinsFallback = row.wins;
+        topPlayer = row;
+      }
     }
   });
 
@@ -108,13 +114,13 @@ export function RotationScreen({ h }) {
             
             <div className="w-24 h-24 progress-ring flex items-center justify-center my-auto shadow-[0_0_25px_rgba(198,255,0,0.15)] mt-4">
               <div className="relative z-10 flex flex-col items-center">
-                <span className="text-3xl font-bold leading-none text-white">{maxGames > 0 ? maxGames : 0}</span>
-                <span className="text-[9px] text-gray-sub font-bold uppercase tracking-widest mt-0.5">Jogos</span>
+                <span className="text-3xl font-bold leading-none text-white">{topWR >= 0 ? topWR : 0}%</span>
+                <span className="text-[9px] text-gray-sub font-bold uppercase tracking-widest mt-0.5">Win Rate</span>
               </div>
             </div>
             
-            <div className="text-xs font-bold text-white max-w-full truncate mt-2 bg-white/10 px-3 py-1 rounded-full">
-              {topPlayer ? topPlayer.split(" ")[0] : "Nenhum"}
+            <div className="text-xs font-bold text-white max-w-full truncate mt-2 bg-white/10 px-3 py-1 rounded-full border border-white/5">
+              {topPlayer ? topPlayer.player_name.split(" ")[0] : "Nenhum"}
             </div>
           </section>
         </div>
