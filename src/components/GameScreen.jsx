@@ -74,7 +74,7 @@ export function GameScreen({ h }) {
       {sortedBenchDisplay.length > 0 && (
         <div style={S.benchBar}>
           <span style={S.benchBarLabel}>⏳ Fila:</span>
-          {sortedBenchDisplay.map((p,idx) => (
+          {sortedBenchDisplay.map((p) => (
             <span key={p} style={S.benchPill}>
               {p}
             </span>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase, playersService, rankingService, matchesService, liveMatchService } from "../services/supabase";
 import { POINT_SEQUENCE, POINT_LABELS } from "../utils/constants";
-import { formatTime, shuffle, pickNextFour, updateStats } from "../utils/gameLogic";
+import { formatTime, pickNextFour, updateStats } from "../utils/gameLogic";
 
 function useLocalState(key, initialValue) {
   const [state, setState] = useState(() => {
@@ -40,7 +40,7 @@ export function useBeachCam() {
   const [matchWinner, setMatchWinner] = useLocalState("bc_matchWinner", null);
   const [gameLog, setGameLog] = useLocalState("bc_gameLog", []);
   const [setHistory, setSetHistory] = useLocalState("bc_setHistory", []);
-  const [rotationLog, setRotationLog] = useLocalState("bc_rotationLog", []);
+  const [rotationLog] = useLocalState("bc_rotationLog", []);
 
   const [players, setPlayers] = useState([]);
   const [rankingRows, setRankingRows] = useState([]);
@@ -252,6 +252,7 @@ export function useBeachCam() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     setSyncStatus("syncing");
     loadPlayers(); loadRanking(); loadMatches();
     liveMatchService.fetch().then(st => st && handleRemoteUpdate(st));

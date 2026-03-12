@@ -7,10 +7,6 @@ export function RankingScreen({ h }) {
   const sortedPlayers = [...h.rankingRows].sort((a,b) => b.wins - a.wins);
   const maxWins       = sortedPlayers[0]?.wins ?? 1;
 
-  const sortedDuos = Object.entries(h.duoStats)
-    .map(([key, v]) => ({ key, names: key.split("|"), ...v, winRate: v.games > 0 ? Math.round((v.wins/v.games)*100) : 0 }))
-    .sort((a,b) => b.wins - a.wins || b.winRate - a.winRate);
-
   return (
     <div style={S.screen}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
