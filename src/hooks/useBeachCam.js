@@ -235,7 +235,7 @@ export function useBeachCam() {
     } catch { setSyncStatus("error"); }
   };
 
-  const endSession = () => {
+  const endSession = useCallback(() => {
     // Limpa todo o estado de jogo local
     setScreen("setup");
     setTeamA([]);
@@ -250,8 +250,17 @@ export function useBeachCam() {
     setMatchWinner(null);
     setMatchSetHistory([]);
     setGameLog([]);
-    // Não limpa players nem ranking — só o estado da sessão atual
-  };
+    setMatchSaved(false);
+
+    // Informa aos outros clientes que a sessão acabou (desativa o Ao Vivo)
+    syncState({
+      screen: "setup",
+      teamA: [], teamB: [], bench: [],
+      gamesPlayed: {}, benchSince: {},
+      pointIdxA: 0, pointIdxB: 0, setsA: 0, setsB: 0,
+      matchWinner: null
+    });
+  }, [syncState, setScreen, setTeamA, setTeamB, setBench, setGamesPlayed, setBenchSince, setPointIdxA, setPointIdxB, setSetsA, setSetsB, setMatchWinner, setMatchSetHistory, setGameLog, setMatchSaved]);
 
   const resetMatch = useCallback((sync = true) => {
     setPointIdxA(0); setPointIdxB(0); setSetsA(0); setSetsB(0);
