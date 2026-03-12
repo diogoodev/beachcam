@@ -241,7 +241,7 @@ export function RotationScreen({ h }) {
           />
 
           {/* Sheet */}
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0f0f0f] border-t border-white/10 rounded-t-3xl p-6 pb-10 shadow-2xl">
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0f0f0f] border-t border-white/10 rounded-t-3xl p-6 pb-28 shadow-2xl">
             {/* Handle */}
             <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5" />
 
@@ -307,7 +307,7 @@ export function RotationScreen({ h }) {
             onClick={() => setShowOverrideSheet(false)}
           />
 
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0f0f0f] border-t border-[var(--neon-orange)]/30 rounded-t-3xl p-6 pb-10 shadow-[0_-10px_40px_rgba(255,107,0,0.15)] flex flex-col max-h-[85vh]">
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0f0f0f] border-t border-[var(--neon-orange)]/30 rounded-t-3xl p-6 pb-28 shadow-[0_-10px_40px_rgba(255,107,0,0.15)] flex flex-col max-h-[85vh]">
             <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5 shrink-0" />
 
             <div className="text-xs font-bold text-[var(--neon-orange)] tracking-widest uppercase mb-1">
