@@ -195,3 +195,42 @@
     border-radius: 50%;
   }
 }
+
+/* Ranking Utilities */
+@utility text-glow-cyan {
+  color: var(--neon-blue);
+  text-shadow: 0 0 15px rgba(0, 245, 255, 0.6);
+}
+
+@utility crown-icon {
+  color: var(--sand);
+  filter: drop-shadow(0 0 10px rgba(244, 208, 63, 0.4));
+}
+
+@utility podium-card {
+  background-color: #0a0a0a;
+  border-radius: 1.5rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+@utility podium-1st {
+  border: 1px solid var(--neon-green);
+  box-shadow: 0 0 25px rgba(198, 255, 0, 0.15), inset 0 0 15px rgba(198, 255, 0, 0.05);
+  transform: translateY(-8px);
+}
+
+@utility podium-2nd {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-top: 2rem;
+}
+
+@utility podium-3rd {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-top: 2.5rem;
+}
