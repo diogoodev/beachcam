@@ -1,6 +1,5 @@
 import React from "react";
 import { useBeachCam } from "./hooks/useBeachCam";
-import { SyncBadge } from "./components/Common";
 import { SetupScreen } from "./components/SetupScreen";
 import { GameScreen } from "./components/GameScreen";
 import { RankingScreen } from "./components/RankingScreen";
@@ -36,22 +35,10 @@ export default function App() {
         {h.screen === "rotation" && <RotationScreen h={h} />}
       </main>
 
-      {/* RENDER ACTIVE LIVE MATCH OVERLAY IN FOOTER IF NOT IN GAME */}
-      {h.activeLiveMatch && h.activeLiveMatch.screen === "game" && h.screen !== "game" && (
-        <div className="fixed bottom-20 left-0 right-0 p-4 z-40 flex justify-center">
-          <button 
-             onClick={h.joinLiveMatch}
-             className="bg-[var(--neon-green)] text-black font-black italic px-6 py-3 rounded-full flex items-center gap-2 shadow-[0_0_20px_rgba(198,255,0,0.5)] animate-pulse"
-          >
-            <span className="material-symbols-outlined">sports_tennis</span>
-            JOGO EM ANDAMENTO
-          </button>
-        </div>
-      )}
 
       {/* BOTTOM NAVIGATION (For non-game screens) */}
       {h.screen !== "game" && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 px-6 py-3 flex justify-between items-center z-50">
+        <nav className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 px-6 py-3 flex justify-around items-center z-50">
           <button 
             onClick={() => h.setScreen("setup")}
             className={`flex flex-col items-center gap-1 transition-colors ${h.screen === "setup" ? "text-[var(--neon-blue)]" : "text-white/50 hover:text-white"}`}
@@ -59,6 +46,16 @@ export default function App() {
             <span className="material-symbols-outlined text-2xl">home</span>
             <span className="text-[10px] font-bold uppercase tracking-widest">Início</span>
           </button>
+
+          {h.activeLiveMatch && h.activeLiveMatch.screen === "game" && (
+            <button 
+              onClick={h.joinLiveMatch}
+              className="flex flex-col items-center gap-1 text-[var(--neon-green)] animate-pulse"
+            >
+              <span className="material-symbols-outlined text-2xl">sports_tennis</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest">Ao Vivo</span>
+            </button>
+          )}
           
           <button 
             onClick={() => h.setScreen("ranking")}
@@ -76,10 +73,9 @@ export default function App() {
             <span className="text-[10px] font-bold uppercase tracking-widest">Histórico</span>
           </button>
           
-          {/* We dont have a config page but we can leave the button to match the design for now or route to setup */}
           <button 
-            onClick={() => h.setScreen("settings")}
-            className={`flex flex-col items-center gap-1 transition-colors ${h.screen === "settings" ? "text-[var(--neon-blue)]" : "text-white/50 hover:text-white"}`}
+            onClick={() => h.setScreen("setup")}
+            className="flex flex-col items-center gap-1 transition-colors text-white/50 hover:text-white"
           >
             <span className="material-symbols-outlined text-2xl">settings</span>
             <span className="text-[10px] font-bold uppercase tracking-widest">Configs</span>

@@ -47,13 +47,14 @@ export function SetupScreen({ h }) {
     }
   };
 
+  // Fix #5: Use inline styles for the dynamic color instead of template-literal Tailwind classes
   const renderPlayerCard = (player, colorVar, rotateClass, onRemove) => {
     if (!player) {
       return (
-        <div className={`player-card rounded-2xl p-4 flex flex-col items-center gap-2 ${rotateClass} transform animate-[pulse_2s_infinite] border-2 border-[${colorVar}]`}>
+        <div className={`player-card rounded-2xl p-4 flex flex-col items-center gap-2 ${rotateClass} transform animate-pulse border-2`} style={{ borderColor: colorVar }}>
           <div className="relative">
             <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center border-4 border-dashed border-white/40">
-              <span className={`material-symbols-outlined text-4xl text-[${colorVar}]`}>person_add</span>
+              <span className="material-symbols-outlined text-4xl" style={{ color: colorVar }}>person_add</span>
             </div>
           </div>
           <span className="font-black text-sm md:text-lg uppercase tracking-tight opacity-50 italic">Empty</span>
@@ -64,7 +65,7 @@ export function SetupScreen({ h }) {
     return (
       <div className={`player-card rounded-2xl p-4 flex flex-col items-center gap-2 ${rotateClass} transform hover:scale-105 transition-transform`}>
         <div className="relative">
-          <div className={`w-20 h-20 rounded-2xl bg-black/40 flex items-center justify-center border-4 shadow-xl border-[${colorVar}] overflow-hidden`}>
+          <div className="w-20 h-20 rounded-2xl bg-black/40 flex items-center justify-center border-4 shadow-xl overflow-hidden" style={{ borderColor: colorVar }}>
             <span className="text-4xl">{player[0] && player[0].toUpperCase()}</span>
           </div>
           <button 
@@ -74,7 +75,7 @@ export function SetupScreen({ h }) {
             <span className="material-symbols-outlined text-xs">close</span>
           </button>
         </div>
-        <span className={`font-black text-sm md:text-lg uppercase tracking-tight truncate w-full text-center text-[${colorVar}]`}>{player}</span>
+        <span className="font-black text-sm md:text-lg uppercase tracking-tight truncate w-full text-center" style={{ color: colorVar }}>{player}</span>
       </div>
     );
   };
@@ -82,12 +83,12 @@ export function SetupScreen({ h }) {
   // STEP 0: PLAYERS & FORMAT
   if (step === 0) {
     return (
-      <div className="px-4 animate-fade-in relative z-10">
+      <div className="px-4 relative z-10">
         <div className="mb-8">
           <h2 className="heading-font text-5xl font-black mb-2 leading-none text-white drop-shadow-2xl">
             ARENA<br/>PLAYERS
           </h2>
-          <div className="flex gap-2 mt-4 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
             {[3, 5, 7].map(n => (
               <button 
                 key={n}
@@ -147,8 +148,11 @@ export function SetupScreen({ h }) {
           <div className="max-w-md mx-auto">
             <button 
               onClick={() => {
+                // Fix #4: Clear teams before entering step 1
+                h.setTeamA([]);
+                h.setTeamB([]);
+                h.setBench([...h.players]);
                 setStep(1); 
-                h.setBench([...h.players]); 
                 setSelectingFor("A");
               }}
               disabled={h.players.length < 4}
@@ -170,7 +174,7 @@ export function SetupScreen({ h }) {
 
   // STEP 1: TEAMS MAKER
   return (
-    <div className="px-4 animate-fade-in relative z-10 pb-40">
+    <div className="px-4 relative z-10 pb-40">
       <div className="absolute inset-0 pointer-events-none opacity-40">
         <div className="absolute top-1/4 left-0 w-full h-[2px] court-line"></div>
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[2px] h-3/4 court-line"></div>

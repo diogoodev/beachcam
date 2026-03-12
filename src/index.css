@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 @layer base {
   :root {
@@ -19,40 +17,38 @@
   }
 }
 
-@layer components {
-  .heading-font {
-    font-family: "Montserrat", sans-serif;
-    text-transform: uppercase;
-  }
-  
-  .court-bg {
-    background-image: linear-gradient(to bottom, rgba(0, 180, 216, 0.4), rgba(244, 208, 63, 0.6)), url('https://lh3.googleusercontent.com/aida-public/AB6AXuCBq79TN8RcGbIXvG7eDbl6QjhWRUvkaM38t43CZGqA5PQSaQGQ2EeLBdhaSf-fh9_QlYlUUOLs34cX13InjS7IhLZEegxw0vb7G7BUCdECxmhLrKDH319d4ZATQr_0Zrdl34trcL0hD3ebCn1oV_GjKYo1p79CAAVwyDqk0upFLqrs12E7OqCfHfMUTfrisl5AFOvjF1EjbJSMAZQK6jP_kq1XoEyGGzDgVS76P1V33sgjZYoQjiodelGnUozh1YqIvI54EkfQWzD8');
-    background-size: cover;
-    background-position: center;
-  }
-  
-  .player-card {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  }
-  
-  .court-line {
-    background: rgba(255, 255, 255, 0.8);
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
-  }
-  
-  .neon-glow {
-    box-shadow: 0 0 20px var(--neon-blue);
-  }
-  
-  .portal-gradient {
-    background: linear-gradient(180deg, transparent, rgba(0, 245, 255, 0.2), rgba(0, 245, 255, 0.5));
-  }
-  
-  .glass-input {
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid var(--neon-blue);
-  }
+@utility heading-font {
+  font-family: "Montserrat", sans-serif;
+  text-transform: uppercase;
+}
+
+@utility court-bg {
+  background-image: linear-gradient(to bottom, rgba(0, 180, 216, 0.4), rgba(244, 208, 63, 0.6)), url('https://lh3.googleusercontent.com/aida-public/AB6AXuCBq79TN8RcGbIXvG7eDbl6QjhWRUvkaM38t43CZGqA5PQSaQGQ2EeLBdhaSf-fh9_QlYlUUOLs34cX13InjS7IhLZEegxw0vb7G7BUCdECxmhLrKDH319d4ZATQr_0Zrdl34trcL0hD3ebCn1oV_GjKYo1p79CAAVwyDqk0upFLqrs12E7OqCfHfMUTfrisl5AFOvjF1EjbJSMAZQK6jP_kq1XoEyGGzDgVS76P1V33sgjZYoQjiodelGnUozh1YqIvI54EkfQWzD8');
+  background-size: cover;
+  background-position: center;
+}
+
+@utility player-card {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+@utility court-line {
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+}
+
+@utility neon-glow {
+  box-shadow: 0 0 20px var(--neon-blue);
+}
+
+@utility portal-gradient {
+  background: linear-gradient(180deg, transparent, rgba(0, 245, 255, 0.2), rgba(0, 245, 255, 0.5));
+}
+
+@utility glass-input {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid var(--neon-blue);
 }

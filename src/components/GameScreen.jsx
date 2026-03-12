@@ -82,10 +82,10 @@ export function GameScreen({ h }) {
         </div>
       )}
 
-      {h.setHistory.length > 0 && (
+      {h.matchSetHistory.length > 0 && (
         <div style={S.setHistoryBox}>
           <div style={S.setHistoryTitle}>Histórico de Sets</div>
-          {h.setHistory.map(s => (
+          {h.matchSetHistory.map(s => (
             <div key={s.setNum} style={S.setHistoryRow}>
               <span style={{ color:"#e2e8f0", fontWeight:900 }}>{s.labelA} × {s.labelB}</span>
               <span style={{ fontSize:10, color:"#475569" }}>Set {s.setNum}</span>
