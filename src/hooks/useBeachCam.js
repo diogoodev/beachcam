@@ -131,6 +131,7 @@ export function useBeachCam() {
       localTimestamp: now,
       ...overrides
     };
+    setActiveLiveMatch(st);
     liveMatchService.sync(st);
   }, [pointIdxA, pointIdxB, setsA, setsB, matchWinner, setLocalTimestamp]);
 
@@ -342,11 +343,14 @@ export function useBeachCam() {
     setPointIdxA(0); setPointIdxB(0); setSetsA(0); setSetsB(0); setMatchWinner(null); setMatchSaved(false);
     setScreen("game");
     // Pass all values explicitly to avoid stale closure
-    liveMatchService.sync({
+    const st = {
       screen: "game", teamA: tA, teamB: tB, bench: b,
       pointIdxA:0, pointIdxB:0, setsA:0, setsB:0, matchWinner:null,
-      bestOf: bestOfRef.current, gamesPlayed: initGP, benchSince: initBS
-    });
+      bestOf: bestOfRef.current, gamesPlayed: initGP, benchSince: initBS,
+      localTimestamp: Date.now()
+    };
+    setActiveLiveMatch(st);
+    liveMatchService.sync(st);
   };
 
   const doRotation = (winner) => {
@@ -358,11 +362,14 @@ export function useBeachCam() {
     setGamesPlayed(newGP); setBenchSince(newBS);
     setPointIdxA(0); setPointIdxB(0); setSetsA(0); setSetsB(0); setMatchWinner(null); setMatchSaved(false);
     setScreen("game");
-    liveMatchService.sync({
+    const st = {
       screen: "game", teamA: nextTeamA, teamB: nextTeamB, bench: nextBench,
       pointIdxA:0, pointIdxB:0, setsA:0, setsB:0, matchWinner:null,
-      bestOf: bestOfRef.current, gamesPlayed: newGP, benchSince: newBS
-    });
+      bestOf: bestOfRef.current, gamesPlayed: newGP, benchSince: newBS,
+      localTimestamp: Date.now()
+    };
+    setActiveLiveMatch(st);
+    liveMatchService.sync(st);
   };
 
   useEffect(() => {
