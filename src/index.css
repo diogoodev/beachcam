@@ -155,3 +155,43 @@
   background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.1), transparent);
   z-index: 1;
 }
+
+/* Court Status / Bento Utilities */
+@utility bg-card {
+  background-color: #1c1c1e;
+}
+
+@utility text-neon-orange {
+  color: #FF6B4A;
+}
+
+@utility border-neon-orange {
+  border-color: #FF6B4A;
+}
+
+@utility text-gray-sub {
+  color: #8E8E93;
+}
+
+@utility avatar-stack {
+  & > div:not(:first-child) {
+    margin-left: -12px;
+  }
+}
+
+@utility progress-ring {
+  background: conic-gradient(
+    #FF6B4A 0deg 90deg,
+    #1c1c1e 90deg 110deg,
+    #C6FF00 110deg 360deg
+  );
+  border-radius: 50%;
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 10px;
+    background-color: #1c1c1e;
+    border-radius: 50%;
+  }
+}
