@@ -6,7 +6,6 @@ import { SetupScreen } from "./components/SetupScreen";
 import { GameScreen } from "./components/GameScreen";
 import { RankingScreen } from "./components/RankingScreen";
 import { RotationScreen } from "./components/RotationScreen";
-import { ReplaysScreen } from "./components/ReplaysScreen";
 
 export default function App() {
   const h = useBeachCam();
@@ -22,11 +21,10 @@ export default function App() {
             <SyncBadge status={h.syncStatus} />
             {h.screen === "game" && (<>
               <button style={S.navBtn} onClick={() => h.setScreen("ranking")}>🏆</button>
-              <button style={S.navBtn} onClick={() => h.setScreen("replays")}>🎬 {h.replays.length}</button>
               <button style={S.navBtn} onClick={() => h.setScreen("rotation")}>🔄</button>
               <button style={S.navBtn} onClick={() => h.setScreen("setup")}>⚙️</button>
             </>)}
-            {["replays","rotation","ranking"].includes(h.screen) && (
+            {["rotation","ranking"].includes(h.screen) && (
               <button style={S.navBtn} onClick={() => h.setScreen("game")}>← Quadra</button>
             )}
           </div>
@@ -37,8 +35,6 @@ export default function App() {
         {h.screen === "game"     && <GameScreen h={h} />}
         {h.screen === "ranking"  && <RankingScreen h={h} />}
         {h.screen === "rotation" && <RotationScreen h={h} />}
-        {h.screen === "replays"  && <ReplaysScreen h={h} />}
-
       </div>
     </div>
   );

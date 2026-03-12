@@ -1,46 +1,65 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase, playersService, rankingService, matchesService, liveMatchService } from "../services/supabase";
 import { POINT_SEQUENCE, POINT_LABELS } from "../utils/constants";
 import { formatTime, shuffle, pickNextFour, updateStats } from "../utils/gameLogic";
 
+function useLocalState(key, initialValue) {
+  const [state, setState] = useState(() => {
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      console.error("Error reading localStorage", error);
+      return initialValue;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(state));
+    } catch (error) {
+      console.error("Error setting localStorage", error);
+    }
+  }, [key, state]);
+
+  return [state, setState];
+}
+
 export function useBeachCam() {
-  const [screen, setScreen] = useState("setup");
+  const [screen, setScreen] = useLocalState("bc_screen", "setup");
+  const [teamA, setTeamA] = useLocalState("bc_teamA", []);
+  const [teamB, setTeamB] = useLocalState("bc_teamB", []);
+  const [bench, setBench] = useLocalState("bc_bench", []);
+  const [gamesPlayed, setGamesPlayed] = useLocalState("bc_gamesPlayed", {});
+  const [benchSince, setBenchSince] = useLocalState("bc_benchSince", {});
+  const [pointIdxA, setPointIdxA] = useLocalState("bc_pointIdxA", 0);
+  const [pointIdxB, setPointIdxB] = useLocalState("bc_pointIdxB", 0);
+  const [setsA, setSetsA] = useLocalState("bc_setsA", 0);
+  const [setsB, setSetsB] = useLocalState("bc_setsB", 0);
+  const [bestOf, setBestOf] = useLocalState("bc_bestOf", 3);
+  const [matchWinner, setMatchWinner] = useLocalState("bc_matchWinner", null);
+  const [gameLog, setGameLog] = useLocalState("bc_gameLog", []);
+  const [setHistory, setSetHistory] = useLocalState("bc_setHistory", []);
+  const [rotationLog, setRotationLog] = useLocalState("bc_rotationLog", []);
+
   const [players, setPlayers] = useState([]);
-  const [teamA, setTeamA] = useState([]);
-  const [teamB, setTeamB] = useState([]);
-  const [bench, setBench] = useState([]);
-  const [gamesPlayed, setGamesPlayed] = useState({});
-  const [benchSince, setBenchSince] = useState({});
   const [rankingRows, setRankingRows] = useState([]);
   const [matchHistory, setMatchHistory] = useState([]);
   const [duoStats, setDuoStats] = useState({});
-  const [pointIdxA, setPointIdxA] = useState(0);
-  const [pointIdxB, setPointIdxB] = useState(0);
-  const [setsA, setSetsA] = useState(0);
-  const [setsB, setSetsB] = useState(0);
-  const [bestOf, setBestOf] = useState(3);
-  const [matchWinner, setMatchWinner] = useState(null);
   const [replays, setReplays] = useState([]);
   const [flash, setFlash] = useState(null);
-  const [gameLog, setGameLog] = useState([]);
-  const [setHistory, setSetHistory] = useState([]);
-  const [rotationLog, setRotationLog] = useState([]);
   const [syncStatus, setSyncStatus] = useState("offline");
+  
+  const [activeLiveMatch, setActiveLiveMatch] = useState(null);
+  const screenRef = useRef(screen);
+
+  useEffect(() => {
+    screenRef.current = screen;
+  }, [screen]);
 
   const setsToWin = Math.ceil(bestOf / 2);
 
-  // Helper for flash
   const triggerFlash = (val) => { setFlash(val); setTimeout(() => setFlash(null), 700); };
-
-  // ── Remote Sync ─────────────────────────────────────────────────────────────
-  const syncLiveState = useCallback(async (updates = {}) => {
-    // Note: To avoid closure stale state, we'd ideally use functional updates or refs, 
-    // but for the sake of the refactor, we'll assume latest state is available.
-    try {
-      // In a real hook, you might want to get these from a ref or use a "dispatch" pattern
-      // to avoid dependencies. For now, we'll pass the critical ones.
-    } catch (e) { console.error(e); }
-  }, []);
 
   const applyRemoteState = useCallback((st) => {
     if (st.screen) setScreen(st.screen);
@@ -55,9 +74,23 @@ export function useBeachCam() {
     if (st.matchWinner !== undefined) setMatchWinner(st.matchWinner);
     if (st.gamesPlayed) setGamesPlayed(st.gamesPlayed);
     if (st.benchSince) setBenchSince(st.benchSince);
-  }, []);
+  }, [setScreen, setTeamA, setTeamB, setBench, setPointIdxA, setPointIdxB, setSetsA, setSetsB, setBestOf, setMatchWinner, setGamesPlayed, setBenchSince]);
 
-  // ── API Actions ─────────────────────────────────────────────────────────────
+  const handleRemoteUpdate = useCallback((st) => {
+    if (!st) return;
+    setActiveLiveMatch(st);
+    if (screenRef.current === "game") {
+      applyRemoteState(st);
+    }
+  }, [applyRemoteState]);
+
+  const joinLiveMatch = useCallback(() => {
+    if (activeLiveMatch) {
+      applyRemoteState(activeLiveMatch);
+      setScreen("game");
+    }
+  }, [activeLiveMatch, applyRemoteState, setScreen]);
+
   const loadPlayers = useCallback(async () => {
     try {
       const names = await playersService.fetchAll();
@@ -130,15 +163,21 @@ export function useBeachCam() {
     } catch { setSyncStatus("error"); }
   };
 
-  // ── Game Logic ──────────────────────────────────────────────────────────────
+  const syncState = useCallback((overrides = {}) => {
+    const st = {
+      screen, teamA, teamB, bench, pointIdxA, pointIdxB, setsA, setsB, 
+      matchWinner, bestOf, gamesPlayed, benchSince, ...overrides
+    };
+    liveMatchService.sync(st);
+  }, [screen, teamA, teamB, bench, pointIdxA, pointIdxB, setsA, setsB, matchWinner, bestOf, gamesPlayed, benchSince]);
+
   const resetMatch = useCallback((sync = true) => {
     setPointIdxA(0); setPointIdxB(0); setSetsA(0); setSetsB(0);
     setMatchWinner(null); setSetHistory([]); setGameLog([]);
-    if (sync) liveMatchService.sync({ 
-      screen, teamA, teamB, bench, pointIdxA:0, pointIdxB:0, setsA:0, setsB:0, 
-      matchWinner:null, bestOf, gamesPlayed, benchSince 
-    });
-  }, [screen, teamA, teamB, bench, bestOf, gamesPlayed, benchSince]);
+    if (sync) {
+      syncState({ pointIdxA:0, pointIdxB:0, setsA:0, setsB:0, matchWinner:null });
+    }
+  }, [syncState, setPointIdxA, setPointIdxB, setSetsA, setSetsB, setMatchWinner, setSetHistory, setGameLog]);
 
   const addPoint = (team) => {
     if (matchWinner) return;
@@ -165,17 +204,11 @@ export function useBeachCam() {
         setMatchWinner(mw);
         saveMatch(mw, teamA, teamB, newSA, newSB);
       }
-      liveMatchService.sync({
-        screen, teamA, teamB, bench, bestOf, gamesPlayed, benchSince,
-        pointIdxA: 0, pointIdxB: 0, setsA: newSA, setsB: newSB, matchWinner: mw
-      });
+      syncState({ pointIdxA: 0, pointIdxB: 0, setsA: newSA, setsB: newSB, matchWinner: mw });
     } else {
       setPointIdxA(nextIdxA); setPointIdxB(nextIdxB);
       setGameLog(prev => [{ time: formatTime(), team, type:"point" }, ...prev].slice(0,50));
-      liveMatchService.sync({
-        screen, teamA, teamB, bench, bestOf, gamesPlayed, benchSince, setsA, setsB, matchWinner,
-        pointIdxA: nextIdxA, pointIdxB: nextIdxB
-      });
+      syncState({ pointIdxA: nextIdxA, pointIdxB: nextIdxB });
     }
   };
 
@@ -184,10 +217,7 @@ export function useBeachCam() {
     let nA = pointIdxA, nB = pointIdxB;
     if (team === "A" && pointIdxA > 0) { nA = pointIdxA - 1; setPointIdxA(nA); }
     if (team === "B" && pointIdxB > 0) { nB = pointIdxB - 1; setPointIdxB(nB); }
-    liveMatchService.sync({
-      screen, teamA, teamB, bench, bestOf, gamesPlayed, benchSince, setsA, setsB, matchWinner,
-      pointIdxA: nA, pointIdxB: nB
-    });
+    syncState({ pointIdxA: nA, pointIdxB: nB });
   };
 
   const startGame = (tA, tB, b) => {
@@ -198,10 +228,10 @@ export function useBeachCam() {
     setGamesPlayed(initGP); setBenchSince(initBS);
     setPointIdxA(0); setPointIdxB(0); setSetsA(0); setSetsB(0); setMatchWinner(null);
     setScreen("game");
-    liveMatchService.sync({
+    syncState({
       screen: "game", teamA: tA, teamB: tB, bench: b,
       pointIdxA:0, pointIdxB:0, setsA:0, setsB:0, matchWinner:null,
-      bestOf, gamesPlayed: initGP, benchSince: initBS
+      gamesPlayed: initGP, benchSince: initBS
     });
   };
 
@@ -214,29 +244,28 @@ export function useBeachCam() {
     setGamesPlayed(newGP); setBenchSince(newBS);
     setPointIdxA(0); setPointIdxB(0); setSetsA(0); setSetsB(0); setMatchWinner(null);
     setScreen("game");
-    liveMatchService.sync({
+    syncState({
       screen: "game", teamA: nextTeamA, teamB: nextTeamB, bench: nextBench,
       pointIdxA:0, pointIdxB:0, setsA:0, setsB:0, matchWinner:null,
-      bestOf, gamesPlayed: newGP, benchSince: newBS
+      gamesPlayed: newGP, benchSince: newBS
     });
   };
 
-  // ── Initial Load & Realtime ────────────────────────────────────────────────
   useEffect(() => {
     setSyncStatus("syncing");
     loadPlayers(); loadRanking(); loadMatches();
-    liveMatchService.fetch().then(st => st && applyRemoteState(st));
+    liveMatchService.fetch().then(st => st && handleRemoteUpdate(st));
 
     const rankCh = supabase.channel("ranking-changes").on("postgres_changes", { event:"*", schema:"public", table:"ranking" }, loadRanking).subscribe();
     const matchCh = supabase.channel("match-changes").on("postgres_changes", { event:"INSERT", schema:"public", table:"matches" }, loadMatches).subscribe();
     const playerCh = supabase.channel("player-changes").on("postgres_changes", { event:"*", schema:"public", table:"players" }, loadPlayers).subscribe();
-    const liveCh = supabase.channel("live-match-changes").on("postgres_changes", { event:"UPDATE", schema:"public", table:"live_match", filter:"id=eq.1" }, (p) => applyRemoteState(p.new.state)).subscribe();
+    const liveCh = supabase.channel("live-match-changes").on("postgres_changes", { event:"UPDATE", schema:"public", table:"live_match", filter:"id=eq.1" }, (p) => handleRemoteUpdate(p.new.state)).subscribe();
 
     return () => {
       supabase.removeChannel(rankCh); supabase.removeChannel(matchCh);
       supabase.removeChannel(playerCh); supabase.removeChannel(liveCh);
     };
-  }, [loadPlayers, loadRanking, loadMatches, applyRemoteState]);
+  }, [loadPlayers, loadRanking, loadMatches, handleRemoteUpdate]);
 
   return {
     screen, setScreen,
@@ -251,6 +280,7 @@ export function useBeachCam() {
     replays, setReplays,
     flash, gameLog, setHistory, rotationLog,
     syncStatus,
+    activeLiveMatch, joinLiveMatch,
     startGame, doRotation, resetMatch, triggerFlash
   };
 }

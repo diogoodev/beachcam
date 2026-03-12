@@ -49,9 +49,23 @@ export function SetupScreen({ h }) {
     }
   };
 
+  const hasLiveGame = h.activeLiveMatch && h.activeLiveMatch.screen === "game" && h.screen !== "game";
+
   if (step === 0) {
     return (
       <div style={S.screen}>
+        {hasLiveGame && (
+          <div 
+            style={{
+              background: "#16a34a", color: "#fff", padding: "12px", borderRadius: "8px", 
+              marginBottom: "16px", cursor: "pointer", textAlign: "center", fontWeight: "bold",
+              animation: "pulse 2s infinite"
+            }}
+            onClick={h.joinLiveMatch}
+          >
+            🎾 Jogo em andamento! Toque aqui para entrar na quadra.
+          </div>
+        )}
         <h2 style={S.title}>Jogadores da Partida</h2>
         <div style={S.settingBox}>
           <span style={S.settingLabel}>🏆 Formato</span>
