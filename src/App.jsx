@@ -35,27 +35,27 @@ export default function App() {
         {h.screen === "rotation" && <RotationScreen h={h} />}
       </main>
 
+      {/* BOTTOM NAVIGATION (Always visible) */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 px-6 py-3 flex justify-around items-center z-50">
+        <button 
+          onClick={() => h.setScreen("setup")}
+          className={`flex flex-col items-center gap-1 transition-colors ${h.screen === "setup" ? "text-[var(--neon-blue)]" : "text-white/50 hover:text-white"}`}
+        >
+          <span className="material-symbols-outlined text-2xl">home</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest">Início</span>
+        </button>
 
-      {/* BOTTOM NAVIGATION (For non-game screens) */}
-      {h.screen !== "game" && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 px-6 py-3 flex justify-around items-center z-50">
+        {/* Live Match / Current Match button */}
+        {(h.screen === "game" || (h.activeLiveMatch && h.activeLiveMatch.screen === "game")) && (
           <button 
-            onClick={() => h.setScreen("setup")}
-            className={`flex flex-col items-center gap-1 transition-colors ${h.screen === "setup" ? "text-[var(--neon-blue)]" : "text-white/50 hover:text-white"}`}
+            onClick={() => h.screen === "game" ? null : h.joinLiveMatch()}
+            className={`flex flex-col items-center gap-1 ${h.screen === "game" ? "text-[var(--neon-green)]" : "text-[var(--neon-green)] animate-pulse"}`}
           >
-            <span className="material-symbols-outlined text-2xl">home</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest">Início</span>
+            <span className="material-symbols-outlined text-2xl">sports_tennis</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest">Ao Vivo</span>
+            {h.screen === "game" && <div className="w-1 h-1 rounded-full bg-[var(--neon-green)] mt-[-2px]"></div>}
           </button>
-
-          {h.activeLiveMatch && h.activeLiveMatch.screen === "game" && (
-            <button 
-              onClick={h.joinLiveMatch}
-              className="flex flex-col items-center gap-1 text-[var(--neon-green)] animate-pulse"
-            >
-              <span className="material-symbols-outlined text-2xl">sports_tennis</span>
-              <span className="text-[10px] font-bold uppercase tracking-widest">Ao Vivo</span>
-            </button>
-          )}
+        )}
           
           <button 
             onClick={() => h.setScreen("ranking")}
@@ -81,7 +81,6 @@ export default function App() {
             <span className="text-[10px] font-bold uppercase tracking-widest">Configs</span>
           </button>
         </nav>
-      )}
 
       {/* FLOATING ACTION IF IN GAME TO GO BACK */}
       {h.screen === "game" && (
