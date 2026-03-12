@@ -4,6 +4,8 @@ import { getInitials } from '../utils/helpers';
 export function RotationScreen({ h }) {
   const [showFullBench, setShowFullBench] = useState(false);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
+  const [showOverrideSheet, setShowOverrideSheet] = useState(false);
+  const [overrideSelection, setOverrideSelection] = useState([]);
   const [newPlayerName, setNewPlayerName] = useState("");
   const [adding, setAdding] = useState(false);
   const inputRef = useRef(null);
@@ -28,6 +30,22 @@ export function RotationScreen({ h }) {
     await h.addPlayerMidGame(trimmed);
     setAdding(false);
     setShowAddPlayer(false);
+  };
+
+  const handleToggleOverridePlayer = (player) => {
+    setOverrideSelection(prev => {
+      if (prev.includes(player)) return prev.filter(p => p !== player);
+      if (prev.length < 2) return [...prev, player];
+      return [prev[1], player]; // shifts the oldest selection out
+    });
+  };
+
+  const confirmOverride = () => {
+    if (overrideSelection.length > 0) {
+      h.promotePlayersToNext(overrideSelection);
+      setOverrideSelection([]);
+    }
+    setShowOverrideSheet(false);
   };
 
   // Bench sorting logic
@@ -137,7 +155,13 @@ export function RotationScreen({ h }) {
               )}
             </div>
             <div className="flex justify-start pt-2">
-              <button onClick={() => h.setScreen("setup")} className="text-[10px] flex items-center gap-1 text-white hover:text-black hover:bg-neon-orange transition-colors bg-white/10 py-1.5 px-3 rounded-full font-bold uppercase tracking-wider backdrop-blur-sm">
+              <button 
+                onClick={() => {
+                  setOverrideSelection([]); // limpa estado antigo
+                  setShowOverrideSheet(true);
+                }} 
+                className="text-[10px] flex items-center gap-1 text-white hover:text-black hover:bg-neon-orange transition-colors bg-white/10 py-1.5 px-3 rounded-full font-bold uppercase tracking-wider backdrop-blur-sm"
+              >
                 <span className="material-symbols-outlined text-[14px]">edit</span> Alterar
               </button>
             </div>
@@ -271,6 +295,74 @@ export function RotationScreen({ h }) {
                 </div>
               </div>
             )}
+          </div>
+        </>
+      )}
+
+      {/* ── BOTTOM SHEET: Alterar Próxima Dupla (Override) ── */}
+      {showOverrideSheet && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+            onClick={() => setShowOverrideSheet(false)}
+          />
+
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0f0f0f] border-t border-[var(--neon-orange)]/30 rounded-t-3xl p-6 pb-10 shadow-[0_-10px_40px_rgba(255,107,0,0.15)] flex flex-col max-h-[85vh]">
+            <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5 shrink-0" />
+
+            <div className="text-xs font-bold text-[var(--neon-orange)] tracking-widest uppercase mb-1">
+              Escalar Próxima Dupla
+            </div>
+            <p className="text-white/50 text-xs mb-5">
+              Selecione 1 ou 2 jogadores da fila que devem entrar na próxima rotação furando a ordem atual.
+            </p>
+
+            <div className="flex-1 overflow-y-auto custom-scrollbar mb-4 pr-2">
+              <div className="flex flex-col gap-2">
+                {sortedBenchDisplay.length > 0 ? sortedBenchDisplay.map(p => {
+                  const isSelected = overrideSelection.includes(p);
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => handleToggleOverridePlayer(p)}
+                      className={`flex items-center justify-between p-3 rounded-xl border transition-all ${isSelected ? 'bg-[var(--neon-orange)]/10 border-[var(--neon-orange)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-colors ${isSelected ? 'border-[var(--neon-orange)] text-[var(--neon-orange)] shadow-[0_0_10px_rgba(255,107,0,0.3)] bg-black/40' : 'border-white/20 text-white bg-white/5'}`}>
+                          {getInitials(p)}
+                        </div>
+                        <span className={`font-semibold text-sm transition-colors ${isSelected ? 'text-[var(--neon-orange)]' : 'text-white'}`}>
+                          {p}
+                        </span>
+                      </div>
+                      
+                      {/* Checkbox Indicador */}
+                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isSelected ? 'bg-[var(--neon-orange)] border-[var(--neon-orange)]' : 'border-white/30'}`}>
+                        {isSelected && <span className="material-symbols-outlined text-black text-[14px]">check</span>}
+                      </div>
+                    </button>
+                  );
+                }) : (
+                  <div className="text-sm text-gray-sub text-center py-4 italic">Nenhum jogador na fila de espera.</div>
+                )}
+              </div>
+            </div>
+
+            <div className="shrink-0 pt-2 flex gap-3">
+              <button
+                onClick={() => setShowOverrideSheet(false)}
+                className="flex-1 bg-white/5 border border-white/10 text-white rounded-xl py-4 font-bold uppercase tracking-wider text-sm hover:bg-white/10 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmOverride}
+                disabled={overrideSelection.length === 0}
+                className="flex-1 bg-[var(--neon-orange)] text-black rounded-xl py-4 font-black uppercase tracking-wider text-sm active:scale-95 transition-all shadow-[0_0_20px_rgba(255,107,0,0.3)] disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                Confirmar
+              </button>
+            </div>
           </div>
         </>
       )}

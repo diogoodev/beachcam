@@ -262,6 +262,28 @@ export function useBeachCam() {
     });
   }, [syncState, setScreen, setTeamA, setTeamB, setBench, setGamesPlayed, setBenchSince, setPointIdxA, setPointIdxB, setSetsA, setSetsB, setMatchWinner, setMatchSetHistory, setGameLog, setMatchSaved]);
 
+  const promotePlayersToNext = (playerNames) => {
+    // Para forçar jogadores a serem os próximos, damos a eles um valor altíssimo de benchSince
+    // baseado no maior benchSince atual, garantindo que o `sort` padrão coloque-os no topo.
+    if (!playerNames || playerNames.length === 0) return;
+    
+    let currentMaxSince = 0;
+    Object.values(benchSince).forEach(val => {
+      if (val > currentMaxSince) currentMaxSince = val;
+    });
+
+    // O offset arbitário (e.g. +10) garante a dominação na fila
+    const overrides = {};
+    playerNames.forEach((p, idx) => {
+      // Se mandar dois, o primeiro do array ganha uma vantagem de +2, o segundo +1 
+      overrides[p] = currentMaxSince + 10 + (playerNames.length - idx); 
+    });
+
+    const newBS = { ...benchSince, ...overrides };
+    setBenchSince(newBS);
+    syncState({ benchSince: newBS });
+  };
+
   const resetMatch = useCallback((sync = true) => {
     setPointIdxA(0); setPointIdxB(0); setSetsA(0); setSetsB(0);
     setMatchWinner(null); setMatchSetHistory([]); setGameLog([]); setMatchSaved(false);
@@ -374,6 +396,6 @@ export function useBeachCam() {
     syncStatus,
     activeLiveMatch, joinLiveMatch,
     startGame, doRotation, resetMatch, triggerFlash,
-    endSession
+    endSession, promotePlayersToNext
   };
 }
