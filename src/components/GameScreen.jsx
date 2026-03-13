@@ -78,14 +78,22 @@ export function GameScreen({ h }) {
           <div className="flex gap-4 relative">
             <div 
               className="digit-block team-blue-block"
+              role="button"
+              tabIndex={0}
+              aria-label={`Adicionar ponto para ${h.teamA.join(' e ')}. Placar atual: ${currentLabelA}`}
               onClick={() => h.addPoint("A")}
+              onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && h.addPoint("A")}
             >
               <div className="hinge-line"></div>
               <span className="digit-text team-blue-text">{digitsA[0]}</span>
             </div>
             <div 
               className="digit-block team-blue-block"
+              role="button"
+              tabIndex={0}
+              aria-label={`Adicionar ponto para ${h.teamA.join(' e ')}`}
               onClick={() => h.addPoint("A")}
+              onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && h.addPoint("A")}
             >
               <div className="hinge-line"></div>
               <span className="digit-text team-blue-text">{digitsA[1]}</span>
@@ -95,6 +103,7 @@ export function GameScreen({ h }) {
             <button 
                onClick={(e) => { e.stopPropagation(); h.removePoint("A"); }}
                className="absolute -right-4 -bottom-4 bg-black/80 border border-white/20 text-white p-3 rounded-full flex items-center justify-center opacity-30 hover:opacity-100 active:scale-95 transition-all z-20 backdrop-blur-md"
+               aria-label={`Desfazer ponto da dupla ${h.teamA.join(' e ')}`}
                title="Desfazer Ponto"
             >
               <span className="material-symbols-outlined font-black text-xl">undo</span>
@@ -107,14 +116,22 @@ export function GameScreen({ h }) {
           <div className="flex gap-4 relative">
             <div 
               className="digit-block team-green-block"
+              role="button"
+              tabIndex={0}
+              aria-label={`Adicionar ponto para ${h.teamB.join(' e ')}. Placar atual: ${currentLabelB}`}
               onClick={() => h.addPoint("B")}
+              onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && h.addPoint("B")}
             >
               <div className="hinge-line"></div>
               <span className="digit-text team-green-text">{digitsB[0]}</span>
             </div>
             <div 
               className="digit-block team-green-block"
+              role="button"
+              tabIndex={0}
+              aria-label={`Adicionar ponto para ${h.teamB.join(' e ')}`}
               onClick={() => h.addPoint("B")}
+              onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && h.addPoint("B")}
             >
               <div className="hinge-line"></div>
               <span className="digit-text team-green-text">{digitsB[1]}</span>
@@ -124,6 +141,7 @@ export function GameScreen({ h }) {
             <button 
                onClick={(e) => { e.stopPropagation(); h.removePoint("B"); }}
                className="absolute -left-4 -bottom-4 bg-black/80 border border-white/20 text-white p-3 rounded-full flex items-center justify-center opacity-30 hover:opacity-100 active:scale-95 transition-all z-20 backdrop-blur-md"
+               aria-label={`Desfazer ponto da dupla ${h.teamB.join(' e ')}`}
                title="Desfazer Ponto"
             >
               <span className="material-symbols-outlined font-black text-xl">undo</span>

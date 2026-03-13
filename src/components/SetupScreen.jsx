@@ -57,7 +57,7 @@ export function SetupScreen({ h }) {
               <span className="material-symbols-outlined text-4xl" style={{ color: colorVar }}>person_add</span>
             </div>
           </div>
-          <span className="font-black text-sm md:text-lg uppercase tracking-tight opacity-50 italic">Empty</span>
+          <span className="font-black text-sm md:text-lg uppercase tracking-tight opacity-50 italic">Vazio</span>
         </div>
       );
     }

@@ -174,7 +174,7 @@ export function RotationScreen({ h }) {
             <div className="w-24 h-24 progress-ring flex items-center justify-center my-auto shadow-[0_0_25px_rgba(198,255,0,0.15)] mt-4">
               <div className="relative z-10 flex flex-col items-center">
                 <span className="text-3xl font-bold leading-none text-white">{topWR >= 0 ? topWR : 0}%</span>
-                <span className="text-[9px] text-gray-sub font-bold uppercase tracking-widest mt-0.5">Win Rate</span>
+                <span className="text-[9px] text-gray-sub font-bold uppercase tracking-widest mt-0.5">Taxa Vitória</span>
               </div>
             </div>
             

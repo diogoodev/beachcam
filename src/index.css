@@ -53,47 +53,51 @@
   border: 2px solid var(--neon-blue);
 }
 
-/* Scoreboard Pro Utilities */
-@utility digit-block {
-  position: relative;
-  width: min(135px, 28vw);
-  height: min(200px, 42vw);
-  background: linear-gradient(to bottom, #1a1a1a 0%, #0a0a0a 50%, #000000 50%, #050505 100%);
-  border-radius: 16px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  cursor: pointer;
-  transition: transform 0.1s;
-  &:active {
-    transform: scale(0.95);
+/* Scoreboard Pro — Component classes (not simple utilities) */
+@layer components {
+  .digit-block {
+    position: relative;
+    width: min(135px, 28vw);
+    height: min(200px, 42vw);
+    background: linear-gradient(to bottom, #1a1a1a 0%, #0a0a0a 50%, #000000 50%, #050505 100%);
+    border-radius: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.1s;
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+
+  .digit-text {
+    font-family: inherit;
+    font-size: min(150px, 30vw);
+    font-weight: 900;
+    line-height: min(200px, 42vw);
+    position: absolute;
+    text-align: center;
+    width: 100%;
+    z-index: 10;
+    user-select: none;
+    letter-spacing: -5px;
+  }
+
+  .hinge-line {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 15;
+    transform: translateY(-50%);
   }
 }
 
-@utility digit-text {
-  font-family: inherit;
-  font-size: min(150px, 30vw);
-  font-weight: 900;
-  line-height: min(200px, 42vw);
-  position: absolute;
-  text-align: center;
-  width: 100%;
-  z-index: 10;
-  user-select: none;
-  letter-spacing: -5px;
-}
-
-@utility hinge-line {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background-color: rgba(0, 0, 0, 0.6);
-  z-index: 15;
-  transform: translateY(-50%);
-}
+/* digit-text, hinge-line moved to @layer components above */
 
 @utility team-blue-block {
   border: 2px solid var(--neon-blue);
@@ -179,20 +183,22 @@
   }
 }
 
-@utility progress-ring {
-  background: conic-gradient(
-    #FF6B4A 0deg 90deg,
-    #1c1c1e 90deg 110deg,
-    #C6FF00 110deg 360deg
-  );
-  border-radius: 50%;
-  position: relative;
-  &::before {
-    content: "";
-    position: absolute;
-    inset: 10px;
-    background-color: #1c1c1e;
+@layer components {
+  .progress-ring {
+    background: conic-gradient(
+      #FF6B4A 0deg 90deg,
+      #1c1c1e 90deg 110deg,
+      #C6FF00 110deg 360deg
+    );
     border-radius: 50%;
+    position: relative;
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 10px;
+      background-color: #1c1c1e;
+      border-radius: 50%;
+    }
   }
 }
 
@@ -207,16 +213,18 @@
   filter: drop-shadow(0 0 10px rgba(244, 208, 63, 0.4));
 }
 
-@utility podium-card {
-  background-color: #0a0a0a;
-  border-radius: 1.5rem;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+@layer components {
+  .podium-card {
+    background-color: #0a0a0a;
+    border-radius: 1.5rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
 }
 
 @utility podium-1st {

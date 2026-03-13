@@ -7,28 +7,20 @@ export function RankingScreen({ h }) {
   // Sort players by wins
   const sortedPlayers = [...h.rankingRows].sort((a,b) => b.wins - a.wins);
 
-  // Derive Duo rankings from matchHistory
+  // Calcula ranking de duplas a partir do matchHistory (fonte única de verdade)
   const duoRankings = useMemo(() => {
-    const duoStats = {};
+    const stats = {};
     h.matchHistory.forEach(m => {
-      // Create a consistent key for the winning duo (alphabetical)
       const duo = [m.winner_1, m.winner_2].sort().join(" / ");
-      if (!duoStats[duo]) {
-        duoStats[duo] = { name: duo, players: [m.winner_1, m.winner_2].sort(), wins: 0, games: 0 };
-      }
-      duoStats[duo].wins += 1;
-      
-      // Also map losers for game count if we wanted winrate, but for simple ranking we just count wins
       const loserDuo = [m.loser_1, m.loser_2].sort().join(" / ");
-      if (!duoStats[loserDuo]) {
-        duoStats[loserDuo] = { name: loserDuo, players: [m.loser_1, m.loser_2].sort(), wins: 0, games: 0 };
-      }
-      duoStats[duo].games += 1;
-      duoStats[loserDuo].games += 1;
+      stats[duo] = stats[duo] ?? { name: duo, players: [m.winner_1, m.winner_2].sort(), wins: 0, games: 0 };
+      stats[loserDuo] = stats[loserDuo] ?? { name: loserDuo, players: [m.loser_1, m.loser_2].sort(), wins: 0, games: 0 };
+      stats[duo].wins += 1;
+      stats[duo].games += 1;
+      stats[loserDuo].games += 1;
     });
-
-    return Object.values(duoStats)
-      .filter(d => d.wins > 0) // Only rank duos that have won at least once
+    return Object.values(stats)
+      .filter(d => d.wins > 0)
       .sort((a,b) => b.wins - a.wins);
   }, [h.matchHistory]);
 
@@ -44,7 +36,7 @@ export function RankingScreen({ h }) {
         {/* 2nd Place */}
         {second && (
           <div className="bg-card border border-white/10 rounded-3xl p-3 flex flex-col items-center flex-1 max-w-28 md:max-w-32 shadow-lg mb-4">
-            <div className="text-[9px] text-gray-sub tracking-widest font-bold mb-2 uppercase">2nd - {second.wins} VTs</div>
+            <div className="text-[9px] text-gray-sub tracking-widest font-bold mb-2 uppercase">2º - {second.wins} Vitórias</div>
             <div className={`flex justify-center ${isDuo ? 'avatar-stack' : ''}`}>
                {isDuo ? second.players.map((p, i) => (
                   <div key={p} className="w-10 h-10 rounded-full border-[1.5px] border-[var(--neon-blue)] flex items-center justify-center bg-card text-[var(--neon-blue)] text-xs font-bold shadow-[0_0_10px_rgba(0,245,255,0.2)]" style={{ zIndex: 10 - i }}>
@@ -59,7 +51,7 @@ export function RankingScreen({ h }) {
             <div className="mt-3 text-[10px] md:text-xs font-bold text-white text-center leading-tight uppercase line-clamp-2">
               {isDuo ? second.name : second.player_name}
             </div>
-            {isDuo && <div className="mt-2 text-[10px] text-[var(--neon-blue)] font-bold">WR {second.games > 0 ? Math.round((second.wins/second.games)*100) : 0}%</div>}
+            {isDuo && <div className="mt-2 text-[10px] text-[var(--neon-blue)] font-bold">Taxa Vitória {second.games > 0 ? Math.round((second.wins/second.games)*100) : 0}%</div>}
           </div>
         )}
 
@@ -67,7 +59,7 @@ export function RankingScreen({ h }) {
         {first && (
           <div className="bg-[#0a0a0a] border border-[var(--neon-green)] rounded-3xl p-4 flex flex-col items-center flex-1 max-w-32 md:max-w-36 shadow-[0_0_25px_rgba(198,255,0,0.15)] relative -translate-y-2">
             <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-3xl">👑</div>
-            <div className="text-[10px] text-[var(--neon-green)] tracking-widest font-bold mb-3 uppercase">1st - {first.wins} VTs</div>
+            <div className="text-[10px] text-[var(--neon-green)] tracking-widest font-bold mb-3 uppercase">1º - {first.wins} Vitórias</div>
             <div className={`flex justify-center ${isDuo ? 'avatar-stack' : ''}`}>
                {isDuo ? first.players.map((p, i) => (
                   <div key={p} className="w-12 h-12 rounded-full border-[2px] border-[var(--neon-green)] flex items-center justify-center bg-[#0a0a0a] text-[var(--neon-green)] text-sm font-bold shadow-[0_0_15px_rgba(198,255,0,0.3)]" style={{ zIndex: 10 - i }}>
@@ -82,14 +74,14 @@ export function RankingScreen({ h }) {
             <div className="mt-4 text-xs md:text-sm font-black text-white text-center leading-tight uppercase">
               {isDuo ? first.name : first.player_name}
             </div>
-            {isDuo && <div className="mt-2 text-[11px] bg-[var(--neon-green)] text-black px-3 py-0.5 rounded-full font-black">WR {first.games > 0 ? Math.round((first.wins/first.games)*100) : 0}%</div>}
+            {isDuo && <div className="mt-2 text-[11px] bg-[var(--neon-green)] text-black px-3 py-0.5 rounded-full font-black">Taxa Vitória {first.games > 0 ? Math.round((first.wins/first.games)*100) : 0}%</div>}
           </div>
         )}
 
         {/* 3rd Place */}
         {third && (
           <div className="bg-card border border-white/10 rounded-3xl p-3 flex flex-col items-center flex-1 max-w-28 md:max-w-32 shadow-lg mb-2">
-            <div className="text-[9px] text-gray-sub tracking-widest font-bold mb-2 uppercase">3rd - {third.wins} VTs</div>
+            <div className="text-[9px] text-gray-sub tracking-widest font-bold mb-2 uppercase">3º - {third.wins} Vitórias</div>
             <div className={`flex justify-center ${isDuo ? 'avatar-stack' : ''}`}>
                {isDuo ? third.players.map((p, i) => (
                   <div key={p} className="w-10 h-10 rounded-full border-[1.5px] border-white/50 flex items-center justify-center bg-card text-white/80 text-xs font-bold" style={{ zIndex: 10 - i }}>
@@ -104,7 +96,7 @@ export function RankingScreen({ h }) {
             <div className="mt-3 text-[10px] md:text-xs font-bold text-white text-center leading-tight uppercase line-clamp-2">
               {isDuo ? third.name : third.player_name}
             </div>
-            {isDuo && <div className="mt-2 text-[10px] text-white/50 font-bold">WR {third.games > 0 ? Math.round((third.wins/third.games)*100) : 0}%</div>}
+            {isDuo && <div className="mt-2 text-[10px] text-white/50 font-bold">Taxa Vitória {third.games > 0 ? Math.round((third.wins/third.games)*100) : 0}%</div>}
           </div>
         )}
       </div>
@@ -134,7 +126,7 @@ export function RankingScreen({ h }) {
                    )}
                 </div>
                 <div>
-                  <div className="text-[10px] text-gray-sub font-bold uppercase">{rank}TH - {item.wins} VTs</div>
+                  <div className="text-[10px] text-gray-sub font-bold uppercase">{rank}º - {item.wins} Vitórias</div>
                   <div className="text-xs md:text-sm font-bold text-white uppercase">{isDuo ? item.name : item.player_name}</div>
                 </div>
               </div>
@@ -177,7 +169,7 @@ export function RankingScreen({ h }) {
         <section className="bg-card rounded-[2rem] p-5 shadow-2xl border border-white/5">
           <div className="text-xs font-bold text-white tracking-wide mb-4">HISTÓRICO DE PARTIDAS</div>
           {h.matchHistory.length === 0 ? (
-            <div className="text-gray-500 text-sm italic py-2">Nenhuma partida registrada hoje.</div>
+            <div className="text-gray-500 text-sm italic py-2">Nenhuma partida registrada.</div>
           ) : (
             <div className="flex flex-col gap-3">
               {h.matchHistory.map((m, i) => (
