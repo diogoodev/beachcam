@@ -234,3 +234,27 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
   margin-top: 2.5rem;
 }
+
+/* Interactive Shimmer Button Utilities */
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: translateX(-100%) skewX(-15deg);
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 700ms;
+  pointer-events: none;
+}
+
+.btn-shimmer:hover::after,
+.btn-shimmer:active::after {
+  transform: translateX(100%) skewX(-15deg);
+}

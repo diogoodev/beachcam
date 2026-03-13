@@ -101,7 +101,7 @@ export function SetupScreen({ h }) {
           />
           <button 
             onClick={handleAdd}
-            className="bg-[var(--neon-blue)] text-black p-3 rounded-lg flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+            className="btn-shimmer bg-[var(--neon-blue)] text-black p-3 rounded-lg flex items-center justify-center shadow-lg active:scale-95 transition-transform"
           >
             <span className="material-symbols-outlined font-black">add</span>
           </button>
@@ -141,14 +141,13 @@ export function SetupScreen({ h }) {
                 setSelectingFor("A");
               }}
               disabled={h.players.length < 4}
-              className={`w-full py-5 rounded-2xl flex items-center justify-center gap-4 group transition-all overflow-hidden relative ${
+              className={`btn-shimmer w-full py-5 rounded-2xl flex items-center justify-center gap-4 transition-all relative ${
                 h.players.length >= 4 
-                  ? "bg-[var(--neon-green)] shadow-[0_10px_40px_-10px_rgba(198,255,0,0.5)] active:scale-95 cursor-pointer" 
-                  : "bg-white/20 text-white/50 cursor-not-allowed"
+                  ? "bg-[var(--neon-green)] shadow-[0_10px_40px_-10px_rgba(198,255,0,0.5)] active:scale-95 text-black" 
+                  : "bg-white/20 text-white/50 cursor-not-allowed pointer-events-none"
               }`}
             >
-              {h.players.length >= 4 && <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12"></div>}
-              <span className={`heading-font text-xl font-black italic ${h.players.length >= 4 ? 'text-black' : 'text-white/50'}`}>MONTAR DUPLAS</span>
+              <span className="heading-font text-xl font-black italic">MONTAR DUPLAS</span>
               {h.players.length >= 4 && <span className="material-symbols-outlined text-black font-black text-3xl">bolt</span>}
             </button>
           </div>
@@ -169,7 +168,7 @@ export function SetupScreen({ h }) {
         <h2 className="heading-font text-2xl font-black text-white">DUPLAS</h2>
         <button 
           onClick={randomize}
-          className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg font-bold text-xs uppercase flex items-center gap-2 border border-white/20 transition-colors"
+          className="btn-shimmer bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg font-bold text-xs uppercase flex items-center gap-2 border border-white/20 transition-colors"
         >
           <span className="material-symbols-outlined text-sm">shuffle</span>
           Sortear
@@ -228,13 +227,12 @@ export function SetupScreen({ h }) {
         <button 
           disabled={h.teamA.length < 2 || h.teamB.length < 2}
           onClick={() => h.startGame(h.teamA, h.teamB, h.bench)}
-          className={`flex-1 py-5 rounded-2xl flex items-center justify-center gap-2 group transition-all overflow-hidden relative ${
+          className={`btn-shimmer flex-1 py-5 rounded-2xl flex items-center justify-center gap-2 transition-all relative ${
             h.teamA.length === 2 && h.teamB.length === 2
-              ? "bg-[var(--neon-blue)] shadow-[0_10px_40px_-10px_rgba(0,245,255,0.5)] active:scale-95 cursor-pointer text-black" 
-              : "bg-white/20 text-white/50 cursor-not-allowed"
+              ? "bg-[var(--neon-blue)] shadow-[0_10px_40px_-10px_rgba(0,245,255,0.5)] active:scale-95 text-black" 
+              : "bg-white/20 text-white/50 cursor-not-allowed pointer-events-none"
           }`}
         >
-          {h.teamA.length === 2 && h.teamB.length === 2 && <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12"></div>}
           <span className="heading-font text-xl font-black italic">INICIAR PARTIDA</span>
           {h.teamA.length === 2 && h.teamB.length === 2 && <span className="material-symbols-outlined font-black text-2xl">sports_tennis</span>}
         </button>

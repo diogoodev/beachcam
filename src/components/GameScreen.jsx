@@ -46,13 +46,13 @@ export function GameScreen({ h }) {
           </div>
           <div className="flex gap-4 w-full max-w-sm">
             <button 
-              className="flex-1 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl py-4 font-bold uppercase transition-colors"
+              className="btn-shimmer flex-1 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl py-4 font-bold uppercase transition-colors"
               onClick={() => h.resetMatch()}
             >
               Nova Partida
             </button>
             <button 
-              className="flex-1 bg-[var(--neon-blue)] text-black rounded-xl py-4 font-black uppercase shadow-[0_0_20px_rgba(0,245,255,0.4)] active:scale-95 transition-all"
+              className="btn-shimmer flex-1 bg-[var(--neon-blue)] text-black rounded-xl py-4 font-black uppercase shadow-[0_0_20px_rgba(0,245,255,0.4)] active:scale-95 transition-all"
               onClick={() => h.doRotation(h.matchWinner)}
             >
               🔄 Trocar Fila

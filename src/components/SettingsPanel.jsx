@@ -48,7 +48,7 @@ export function SettingsPanel({ h, onClose }) {
             {!confirmEnd ? (
               <button 
                 onClick={() => setConfirmEnd(true)}
-                className="w-full bg-white/5 hover:bg-white/10 border border-white/10 py-4 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors text-red-400"
+                className="btn-shimmer w-full bg-white/5 hover:bg-white/10 border border-white/10 py-4 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors text-red-400"
               >
                 <span className="material-symbols-outlined">logout</span>
                 Encerrar Sessão Atual
@@ -57,7 +57,7 @@ export function SettingsPanel({ h, onClose }) {
               <div className="flex gap-2">
                 <button 
                   onClick={() => { h.endSession(); setConfirmEnd(false); onClose(); }}
-                  className="flex-[2] bg-red-900/80 hover:bg-red-700 border border-red-500/30 py-4 rounded-xl font-black uppercase tracking-wider text-white transition-colors"
+                  className="btn-shimmer flex-[2] bg-red-900/80 hover:bg-red-700 border border-red-500/30 py-4 rounded-xl font-black uppercase tracking-wider text-white transition-colors"
                 >
                   Confirmar Encerramento
                 </button>
@@ -74,7 +74,7 @@ export function SettingsPanel({ h, onClose }) {
             {!confirmReset ? (
               <button 
                 onClick={() => setConfirmReset(true)}
-                className="w-full bg-white/5 hover:bg-white/10 border border-white/10 py-4 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors text-white/50"
+                className="btn-shimmer w-full bg-white/5 hover:bg-white/10 border border-white/10 py-4 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors text-white/50"
               >
                 <span className="material-symbols-outlined">delete_forever</span>
                 Zerar Todo o Ranking
@@ -83,7 +83,7 @@ export function SettingsPanel({ h, onClose }) {
               <div className="flex gap-2">
                 <button 
                   onClick={() => { h.resetRanking(); setConfirmReset(false); onClose(); }}
-                  className="flex-[2] bg-red-900/80 hover:bg-red-700 border border-red-500/30 py-4 rounded-xl font-black uppercase tracking-wider text-white transition-colors"
+                  className="btn-shimmer flex-[2] bg-red-900/80 hover:bg-red-700 border border-red-500/30 py-4 rounded-xl font-black uppercase tracking-wider text-white transition-colors"
                 >
                   Confirmar Reset Geral
                 </button>

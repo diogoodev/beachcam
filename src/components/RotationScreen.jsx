@@ -87,7 +87,7 @@ export function RotationScreen({ h }) {
         {/* Botão + Jogador */}
         <button
           onClick={() => setShowAddPlayer(true)}
-          className="ml-auto flex items-center gap-1.5 bg-[var(--neon-green)] text-black px-3 py-2 rounded-full font-black text-xs uppercase tracking-wider shadow-[0_0_16px_rgba(198,255,0,0.3)] active:scale-95 transition-all"
+          className="btn-shimmer ml-auto flex items-center gap-1.5 bg-[var(--neon-green)] text-black px-3 py-2 rounded-full font-black text-xs uppercase tracking-wider shadow-[0_0_16px_rgba(198,255,0,0.3)] active:scale-95 transition-all"
         >
           <span className="material-symbols-outlined text-[16px]">person_add</span>
           Jogador
@@ -266,7 +266,7 @@ export function RotationScreen({ h }) {
               <button
                 onClick={handleAddPlayer}
                 disabled={!newPlayerName.trim() || adding || h.players.includes(newPlayerName.trim())}
-                className="bg-[var(--neon-green)] text-black px-5 py-3 rounded-xl font-black uppercase text-sm active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-[0_0_16px_rgba(198,255,0,0.25)] flex items-center justify-center"
+                className="btn-shimmer bg-[var(--neon-green)] text-black px-5 py-3 rounded-xl font-black uppercase text-sm active:scale-95 transition-all disabled:opacity-30 disabled:pointer-events-none shadow-[0_0_16px_rgba(198,255,0,0.25)] flex items-center justify-center"
               >
                 {adding ? "..." : "Entrar"}
               </button>
@@ -358,7 +358,7 @@ export function RotationScreen({ h }) {
               <button
                 onClick={confirmOverride}
                 disabled={overrideSelection.length === 0}
-                className={`flex-1 rounded-xl py-4 font-black uppercase tracking-wider text-sm active:scale-95 transition-all shadow-[0_0_20px_rgba(255,107,0,0.3)] disabled:opacity-30 disabled:cursor-not-allowed ${
+                className={`btn-shimmer flex-1 rounded-xl py-4 font-black uppercase tracking-wider text-sm active:scale-95 transition-all shadow-[0_0_20px_rgba(255,107,0,0.3)] disabled:opacity-30 disabled:pointer-events-none ${
                   overrideSelection.length === 2 
                     ? "bg-[#111] border-2 border-[var(--neon-orange)] text-[var(--neon-orange)]" 
                     : "bg-[var(--neon-orange)] text-black border-2 border-transparent"
