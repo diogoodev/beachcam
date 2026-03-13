@@ -1,0 +1,15 @@
+{
+  "name": "BeachCam",
+  "short_name": "BeachCam",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/logoBeachCam.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png"
+    }
+  ]
+}
