@@ -5,13 +5,16 @@ import { GameScreen } from "./components/GameScreen";
 import { RankingScreen } from "./components/RankingScreen";
 import { RotationScreen } from "./components/RotationScreen";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { SplashScreen } from "./components/SplashScreen";
 
 export default function App() {
   const h = useBeachCam();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
   return (
     <div className="min-h-screen text-white select-none relative font-['Outfit']">
+      {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
       <div className="fixed inset-0 court-bg -z-10"></div>
       
       {/* HEADER GLOBAL */}
