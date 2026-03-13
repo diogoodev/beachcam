@@ -15,7 +15,7 @@ export default function App() {
       {/* HEADER GLOBAL */}
       <header className="fixed top-0 left-0 right-0 p-6 flex justify-between items-center bg-gradient-to-b from-black/60 to-transparent z-50">
         <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-[var(--neon-green)] text-3xl">sports_tennis</span>
+          <img src="/logoBeachCam.ico" alt="BeachCam Logo" className="w-8 h-8 object-contain drop-shadow-[0_0_8px_var(--neon-green)]" />
           <h1 className="heading-font text-2xl font-black tracking-tighter italic">BeachCam</h1>
         </div>
         <div className={`px-3 py-1 backdrop-blur-md rounded-full border flex items-center gap-2 transition-colors ${h.syncStatus === "error" ? "bg-red-500/20 border-red-500/50" : "bg-black/40 border-white/20"}`}>
