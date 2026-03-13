@@ -43,7 +43,7 @@ export function RankingScreen({ h }) {
       <div className="flex items-end justify-center gap-2 md:gap-4 mb-8 mt-4">
         {/* 2nd Place */}
         {second && (
-          <div className="bg-card border border-white/10 rounded-3xl p-3 flex flex-col items-center w-28 md:w-32 shadow-lg mb-4">
+          <div className="bg-card border border-white/10 rounded-3xl p-3 flex flex-col items-center flex-1 max-w-28 md:max-w-32 shadow-lg mb-4">
             <div className="text-[9px] text-gray-sub tracking-widest font-bold mb-2 uppercase">2nd - {second.wins} VTs</div>
             <div className={`flex justify-center ${isDuo ? 'avatar-stack' : ''}`}>
                {isDuo ? second.players.map((p, i) => (
@@ -65,7 +65,7 @@ export function RankingScreen({ h }) {
 
         {/* 1st Place */}
         {first && (
-          <div className="bg-[#0a0a0a] border border-[var(--neon-green)] rounded-3xl p-4 flex flex-col items-center w-32 md:w-36 shadow-[0_0_25px_rgba(198,255,0,0.15)] relative -translate-y-2">
+          <div className="bg-[#0a0a0a] border border-[var(--neon-green)] rounded-3xl p-4 flex flex-col items-center flex-1 max-w-32 md:max-w-36 shadow-[0_0_25px_rgba(198,255,0,0.15)] relative -translate-y-2">
             <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-3xl">👑</div>
             <div className="text-[10px] text-[var(--neon-green)] tracking-widest font-bold mb-3 uppercase">1st - {first.wins} VTs</div>
             <div className={`flex justify-center ${isDuo ? 'avatar-stack' : ''}`}>
@@ -88,7 +88,7 @@ export function RankingScreen({ h }) {
 
         {/* 3rd Place */}
         {third && (
-          <div className="bg-card border border-white/10 rounded-3xl p-3 flex flex-col items-center w-28 md:w-32 shadow-lg mb-2">
+          <div className="bg-card border border-white/10 rounded-3xl p-3 flex flex-col items-center flex-1 max-w-28 md:max-w-32 shadow-lg mb-2">
             <div className="text-[9px] text-gray-sub tracking-widest font-bold mb-2 uppercase">3rd - {third.wins} VTs</div>
             <div className={`flex justify-center ${isDuo ? 'avatar-stack' : ''}`}>
                {isDuo ? third.players.map((p, i) => (
@@ -155,18 +155,6 @@ export function RankingScreen({ h }) {
       <header className="mb-8 flex flex-col items-center gap-2 relative">
         <h1 className="text-4xl font-black italic tracking-widest text-glow-cyan uppercase">Ranking</h1>
         <span className="material-symbols-outlined crown-icon text-4xl mt-2">workspace_premium</span>
-        
-        {/* Reset Button Positioned Absolute */}
-        <div className="absolute right-0 top-0">
-          {!confirmReset ? (
-            <button className="bg-white/10 hover:bg-white/20 p-2 text-xs font-bold rounded-xl transition-colors text-white/50 hover:text-white" onClick={() => setConfirmReset(true)}>Reset</button>
-          ) : (
-            <div className="flex gap-2">
-              <button className="bg-red-900/80 hover:bg-red-700 text-white p-2 text-xs font-bold rounded-xl transition-colors" onClick={() => { h.resetRanking(); setConfirmReset(false); }}>Confirmar</button>
-              <button className="bg-white/10 hover:bg-white/20 p-2 text-xs font-bold rounded-xl transition-colors" onClick={() => setConfirmReset(false)}>X</button>
-            </div>
-          )}
-        </div>
       </header>
 
       <main className="flex flex-col gap-6">

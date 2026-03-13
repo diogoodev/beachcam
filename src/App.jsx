@@ -4,16 +4,18 @@ import { SetupScreen } from "./components/SetupScreen";
 import { GameScreen } from "./components/GameScreen";
 import { RankingScreen } from "./components/RankingScreen";
 import { RotationScreen } from "./components/RotationScreen";
+import { SettingsPanel } from "./components/SettingsPanel";
 
 export default function App() {
   const h = useBeachCam();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   return (
     <div className="min-h-screen text-white select-none relative font-['Outfit']">
       <div className="fixed inset-0 court-bg -z-10"></div>
       
       {/* HEADER GLOBAL */}
-      <header className="fixed top-0 left-0 right-0 p-6 flex justify-between items-center bg-gradient-to-b from-black/60 to-transparent z-50">
+      <header className="fixed top-0 left-0 right-0 p-4 sm:p-6 flex justify-between items-center bg-gradient-to-b from-black/60 to-transparent z-50">
         <div className="flex items-center gap-2">
           <img src="/logoBeachCam.ico" alt="BeachCam Logo" className="w-8 h-8 object-contain drop-shadow-[0_0_8px_var(--neon-green)]" />
           <h1 className="heading-font text-2xl font-black tracking-tighter italic">BeachCam</h1>
@@ -38,7 +40,7 @@ export default function App() {
       </main>
 
       {/* BOTTOM NAVIGATION (Always visible) */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 px-6 py-3 flex justify-around items-center z-50">
+      <nav className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 flex justify-around items-center z-50">
         <button 
           onClick={() => h.setScreen("setup")}
           className={`flex flex-col items-center gap-1 transition-colors ${h.screen === "setup" ? "text-[var(--neon-blue)]" : "text-white/50 hover:text-white"}`}
@@ -48,9 +50,13 @@ export default function App() {
         </button>
 
         {/* Live Match / Current Match button */}
-        {(h.screen === "game" || (h.activeLiveMatch && h.activeLiveMatch.screen === "game")) && (
+        {(h.screen === "game" || (h.teamA && h.teamA.length > 0) || (h.activeLiveMatch && h.activeLiveMatch.screen === "game")) && (
           <button 
-            onClick={() => h.screen === "game" ? null : h.joinLiveMatch()}
+            onClick={() => {
+              if (h.screen === "game") return;
+              if (h.teamA && h.teamA.length > 0) h.setScreen("game");
+              else h.joinLiveMatch();
+            }}
             className={`flex flex-col items-center gap-1 ${h.screen === "game" ? "text-[var(--neon-green)]" : "text-[var(--neon-green)] animate-pulse"}`}
           >
             <span className="material-symbols-outlined text-2xl">sports_tennis</span>
@@ -74,49 +80,18 @@ export default function App() {
             <span className="material-symbols-outlined text-2xl">dashboard</span>
             <span className="text-[10px] font-bold uppercase tracking-widest">Status</span>
           </button>
+
+          <button 
+            onClick={() => setIsSettingsOpen(true)}
+            className="flex flex-col items-center gap-1 transition-colors text-white/50 hover:text-white"
+          >
+            <span className="material-symbols-outlined text-2xl">settings</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest">Config</span>
+          </button>
         </nav>
-
-      {/* FLOATING ACTION IF IN GAME TO GO BACK */}
-      {h.screen === "game" && (
-        <EndSessionButton onEndSession={h.endSession} onGoSetup={() => h.setScreen("setup")} />
-      )}
-    </div>
-  );
-}
-
-function EndSessionButton({ onEndSession, onGoSetup }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="fixed top-24 left-4 z-50">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="bg-black/50 p-2 rounded-full backdrop-blur-md text-white/70 hover:text-white"
-      >
-        <span className="material-symbols-outlined">arrow_back</span>
-      </button>
-
-      {open && (
-        <>
-          <div className="fixed inset-0" onClick={() => setOpen(false)} />
-          <div className="absolute top-12 left-0 bg-[#111] border border-white/10 rounded-2xl overflow-hidden shadow-2xl w-44 z-50">
-            <button
-              onClick={() => { onGoSetup(); setOpen(false); }}
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-white hover:bg-white/10 transition-colors"
-            >
-              <span className="material-symbols-outlined text-[18px]">settings</span>
-              Configurar
-            </button>
-            <div className="h-px bg-white/10" />
-            <button
-              onClick={() => { onEndSession(); setOpen(false); }}
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-400 hover:bg-red-500/10 transition-colors"
-            >
-              <span className="material-symbols-outlined text-[18px]">logout</span>
-              Encerrar sessão
-            </button>
-          </div>
-        </>
+      {/* SETTINGS BOTTOM SHEET */}
+      {isSettingsOpen && (
+        <SettingsPanel h={h} onClose={() => setIsSettingsOpen(false)} />
       )}
     </div>
   );

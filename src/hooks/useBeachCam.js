@@ -75,7 +75,11 @@ export function useBeachCam() {
 
   const setsToWin = Math.ceil(bestOf / 2);
 
-  const triggerFlash = (val) => { setFlash(val); setTimeout(() => setFlash(null), 700); };
+  const triggerFlash = (val) => { 
+    setFlash(val); 
+    setTimeout(() => setFlash(null), 700); 
+    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(50);
+  };
 
   const applyRemoteState = useCallback((st) => {
     if (st.screen) setScreen(st.screen);
@@ -202,30 +206,56 @@ export function useBeachCam() {
 
   const addPlayer = async (name) => {
     if (name && !players.includes(name)) {
-      setPlayers(p => [...p, name]);
-      await playersService.add(name);
+      try {
+        setPlayers(p => [...p, name]);
+        await playersService.add(name);
+      } catch (e) {
+        console.error("Failed to add player", e);
+        setPlayers(pl => pl.filter(x => x !== name));
+      }
     }
   };
 
   const removePlayer = async (name) => {
-    setPlayers(pl => pl.filter(x => x !== name));
-    await playersService.remove(name);
+    const backup = [...players];
+    try {
+      setPlayers(pl => pl.filter(x => x !== name));
+      await playersService.remove(name);
+    } catch (e) {
+      console.error("Failed to remove player", e);
+      setPlayers(backup);
+    }
   };
 
   const addPlayerMidGame = async (name) => {
     const trimmed = name.trim();
     if (!trimmed || players.includes(trimmed)) return;
 
-    setPlayers(p => [...p, trimmed]);
-    await playersService.add(trimmed);
+    try {
+      setPlayers(p => [...p, trimmed]);
+      await playersService.add(trimmed);
 
-    // Inicializa estatísticas de sessão zeradas
-    setGamesPlayed(prev => ({ ...prev, [trimmed]: 0 }));
-    // benchSince = 1 pra ele já entrar com alguma prioridade (não vai competir com quem está esperando há mais rodadas)
-    setBenchSince(prev => ({ ...prev, [trimmed]: 1 }));
+      // Inicializa estatísticas de sessão zeradas
+      setGamesPlayed(prev => ({ ...prev, [trimmed]: 0 }));
+      // benchSince = 1 pra ele já entrar com alguma prioridade (não vai competir com quem está esperando há mais rodadas)
+      setBenchSince(prev => ({ ...prev, [trimmed]: 1 }));
 
-    // Insere no final da fila
-    setBench(prev => [...prev, trimmed]);
+      // Insere no final da fila e sincroniza
+      setBench(prev => {
+        const newBench = [...prev, trimmed];
+        setTimeout(() => {
+          syncState({
+            bench: newBench,
+            gamesPlayed: { ...gamesPlayedRef.current, [trimmed]: 0 },
+            benchSince: { ...benchSinceRef.current, [trimmed]: 1 }
+          });
+        }, 0);
+        return newBench;
+      });
+    } catch (e) {
+      console.error("Failed to add player mid-game", e);
+      setPlayers(pl => pl.filter(x => x !== trimmed));
+    }
   };
 
   const resetRanking = async () => {
@@ -254,13 +284,15 @@ export function useBeachCam() {
     setMatchSaved(false);
 
     // Informa aos outros clientes que a sessão acabou (desativa o Ao Vivo)
-    syncState({
-      screen: "setup",
-      teamA: [], teamB: [], bench: [],
-      gamesPlayed: {}, benchSince: {},
-      pointIdxA: 0, pointIdxB: 0, setsA: 0, setsB: 0,
-      matchWinner: null
-    });
+    setTimeout(() => {
+      syncState({
+        screen: "setup",
+        teamA: [], teamB: [], bench: [],
+        gamesPlayed: {}, benchSince: {},
+        pointIdxA: 0, pointIdxB: 0, setsA: 0, setsB: 0,
+        matchWinner: null
+      });
+    }, 0);
   }, [syncState, setScreen, setTeamA, setTeamB, setBench, setGamesPlayed, setBenchSince, setPointIdxA, setPointIdxB, setSetsA, setSetsB, setMatchWinner, setMatchSetHistory, setGameLog, setMatchSaved]);
 
   const promotePlayersToNext = (playerNames) => {
@@ -328,6 +360,7 @@ export function useBeachCam() {
 
   const removePoint = useCallback((team) => {
     if (matchWinner) return;
+    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(30);
     let nA = pointIdxA, nB = pointIdxB;
     if (team === "A" && pointIdxA > 0) { nA = pointIdxA - 1; setPointIdxA(nA); }
     if (team === "B" && pointIdxB > 0) { nB = pointIdxB - 1; setPointIdxB(nB); }

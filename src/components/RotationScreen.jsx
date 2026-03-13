@@ -141,7 +141,7 @@ export function RotationScreen({ h }) {
         <div className="grid grid-cols-2 gap-4">
           
           {/* Next Match Card */}
-          <section className="bg-card rounded-3xl p-5 flex flex-col justify-between aspect-[4/5] shadow-xl border border-white/5">
+          <section className="bg-card rounded-3xl p-5 flex flex-col justify-between aspect-square md:aspect-[4/5] shadow-xl border border-white/5">
             <div className="text-xs font-bold text-neon-orange tracking-wide">PRÓXIMA DUPLA</div>
             <div className="flex flex-col items-center justify-center text-center flex-1 py-1 mt-1">
               {nextDuo.length >= 2 ? (
@@ -168,7 +168,7 @@ export function RotationScreen({ h }) {
           </section>
 
           {/* Player Highlight Card */}
-          <section className="bg-card rounded-3xl p-5 flex flex-col items-center justify-between aspect-[4/5] shadow-xl border border-white/5">
+          <section className="bg-card rounded-3xl p-5 flex flex-col items-center justify-between aspect-square md:aspect-[4/5] shadow-xl border border-white/5">
             <div className="text-xs font-bold text-neon-green tracking-wide self-start w-full text-center">JOGADOR DESTAQUE</div>
             
             <div className="w-24 h-24 progress-ring flex items-center justify-center my-auto shadow-[0_0_25px_rgba(198,255,0,0.15)] mt-4">

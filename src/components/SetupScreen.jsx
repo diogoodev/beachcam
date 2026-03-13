@@ -53,7 +53,7 @@ export function SetupScreen({ h }) {
       return (
         <div className={`player-card rounded-2xl p-4 flex flex-col items-center gap-2 ${rotateClass} transform animate-pulse border-2`} style={{ borderColor: colorVar }}>
           <div className="relative">
-            <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center border-4 border-dashed border-white/40">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/20 flex items-center justify-center border-4 border-dashed border-white/40">
               <span className="material-symbols-outlined text-4xl" style={{ color: colorVar }}>person_add</span>
             </div>
           </div>
@@ -65,7 +65,7 @@ export function SetupScreen({ h }) {
     return (
       <div className={`player-card rounded-2xl p-4 flex flex-col items-center gap-2 ${rotateClass} transform hover:scale-105 transition-transform`}>
         <div className="relative">
-          <div className="w-20 h-20 rounded-2xl bg-black/40 flex items-center justify-center border-4 shadow-xl overflow-hidden" style={{ borderColor: colorVar }}>
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-black/40 flex items-center justify-center border-4 shadow-xl overflow-hidden" style={{ borderColor: colorVar }}>
             <span className="text-4xl">{player[0] && player[0].toUpperCase()}</span>
           </div>
           <button 
@@ -85,24 +85,9 @@ export function SetupScreen({ h }) {
     return (
       <div className="px-4 relative z-10">
         <div className="mb-8">
-          <h2 className="heading-font text-5xl font-black mb-2 leading-none text-white drop-shadow-2xl">
+          <h2 className="heading-font text-4xl sm:text-5xl font-black mb-2 leading-none text-white drop-shadow-2xl">
             ARENA<br/>PLAYERS
           </h2>
-          <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
-            {[3, 5, 7].map(n => (
-              <button 
-                key={n}
-                onClick={() => h.setBestOf(n)}
-                className={`flex-none px-4 py-2 rounded-lg font-extrabold text-xs uppercase transition-all ${
-                  h.bestOf === n 
-                    ? "bg-[var(--neon-blue)] text-black shadow-lg neon-glow" 
-                    : "bg-white/10 text-white border border-white/20 hover:bg-white/20"
-                }`}
-              >
-                Melhor de {n}
-              </button>
-            ))}
-          </div>
         </div>
 
         <div className="glass-input rounded-xl flex items-center p-1 mb-8">
@@ -129,8 +114,8 @@ export function SetupScreen({ h }) {
               className={`player-card rounded-xl p-3 flex flex-col items-center gap-2 transform hover:scale-105 transition-transform ${i%2 === 0 ? '-rotate-2' : 'rotate-2'}`}
             >
               <div className="relative w-full flex justify-center">
-                <div className="w-16 h-16 rounded-xl bg-black/40 flex items-center justify-center border-2 border-white/30 truncate">
-                  <span className="text-2xl font-bold">{p[0] && p[0].toUpperCase()}</span>
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-black/40 flex items-center justify-center border-2 border-white/30 truncate">
+                  <span className="text-xl sm:text-2xl font-bold">{p[0] && p[0].toUpperCase()}</span>
                 </div>
                 <button 
                   onClick={() => h.removePlayer(p)}

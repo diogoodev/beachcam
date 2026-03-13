@@ -8,7 +8,6 @@ export function GameScreen({ h }) {
   // Function to split score into two digits (e.g., "15" -> ["1", "5"], "0" -> ["", "0"], "SET" -> ["S", "E"])
   const getDigits = (score) => {
     if (score === "SET") return ["S", "T"];
-    if (score === "AD") return ["A", "D"];
     const str = String(score);
     if (str.length === 1) return ["", str];
     if (str.length === 2) return [str[0], str[1]];
