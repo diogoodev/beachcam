@@ -120,7 +120,7 @@ export function useBeachCam() {
     const now = Date.now();
     setLocalTimestamp(now);
     const st = {
-      screen: screenRef.current,
+      screen: (teamARef.current && teamARef.current.length > 0) ? "game" : "setup",
       teamA: teamARef.current,
       teamB: teamBRef.current,
       bench: benchRef.current,
