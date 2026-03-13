@@ -337,8 +337,8 @@ export function RotationScreen({ h }) {
                       </div>
                       
                       {/* Checkbox Indicador */}
-                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isSelected ? 'bg-[var(--neon-orange)] border-[var(--neon-orange)]' : 'border-white/30'}`}>
-                        {isSelected && <span className="material-symbols-outlined text-black text-[14px]">check</span>}
+                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isSelected ? 'border-[var(--neon-green)] shadow-[0_0_8px_rgba(198,255,0,0.3)] bg-black/40' : 'border-white/30'}`}>
+                        {isSelected && <span className="material-symbols-outlined text-[var(--neon-green)] text-[14px] font-bold">check</span>}
                       </div>
                     </button>
                   );
@@ -358,7 +358,11 @@ export function RotationScreen({ h }) {
               <button
                 onClick={confirmOverride}
                 disabled={overrideSelection.length === 0}
-                className="flex-1 bg-[var(--neon-orange)] text-black rounded-xl py-4 font-black uppercase tracking-wider text-sm active:scale-95 transition-all shadow-[0_0_20px_rgba(255,107,0,0.3)] disabled:opacity-30 disabled:cursor-not-allowed"
+                className={`flex-1 rounded-xl py-4 font-black uppercase tracking-wider text-sm active:scale-95 transition-all shadow-[0_0_20px_rgba(255,107,0,0.3)] disabled:opacity-30 disabled:cursor-not-allowed ${
+                  overrideSelection.length === 2 
+                    ? "bg-[#111] border-2 border-[var(--neon-orange)] text-[var(--neon-orange)]" 
+                    : "bg-[var(--neon-orange)] text-black border-2 border-transparent"
+                }`}
               >
                 Confirmar
               </button>
