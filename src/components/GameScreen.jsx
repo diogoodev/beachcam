@@ -44,18 +44,30 @@ export function GameScreen({ h }) {
           <div className="font-black text-4xl text-[var(--neon-green)] my-6">
             {h.setsA} × {h.setsB}
           </div>
-          <div className="flex gap-4 w-full max-w-sm">
+          <div className="flex flex-col gap-3 w-full max-w-sm mt-2">
+            <div className="flex gap-4">
+              <button 
+                className="btn-shimmer flex-1 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl py-4 font-bold uppercase transition-colors text-sm md:text-base"
+                onClick={() => h.resetMatch()}
+              >
+                Revanche
+              </button>
+              <button 
+                className="btn-shimmer flex-1 bg-[var(--neon-blue)] text-black rounded-xl py-4 font-black uppercase shadow-[0_0_20px_rgba(0,245,255,0.4)] active:scale-95 transition-all text-sm md:text-base"
+                onClick={() => h.doRotation(h.matchWinner)}
+              >
+                🔄 Próxima Dupla
+              </button>
+            </div>
             <button 
-              className="btn-shimmer flex-1 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl py-4 font-bold uppercase transition-colors"
-              onClick={() => h.resetMatch()}
+              className="btn-shimmer w-full bg-red-600/80 hover:bg-red-600 text-white rounded-xl py-3 font-bold uppercase border border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.3)] active:scale-95 transition-all text-xs md:text-sm tracking-widest mt-1"
+              onClick={() => {
+                if(window.confirm("Certeza que deseja encerrar a sessão de jogos?")) {
+                  h.endSession();
+                }
+              }}
             >
-              Nova Partida
-            </button>
-            <button 
-              className="btn-shimmer flex-1 bg-[var(--neon-blue)] text-black rounded-xl py-4 font-black uppercase shadow-[0_0_20px_rgba(0,245,255,0.4)] active:scale-95 transition-all"
-              onClick={() => h.doRotation(h.matchWinner)}
-            >
-              🔄 Trocar Fila
+              Encerrar Sessão
             </button>
           </div>
         </div>

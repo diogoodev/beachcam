@@ -251,6 +251,40 @@ export function useBeachCam() {
     }
   };
 
+  const removePlayerFromBench = (name) => {
+    const newBench = bench.filter(p => p !== name);
+    const newGP = { ...gamesPlayed };
+    const newBS = { ...benchSince };
+    delete newGP[name];
+    delete newBS[name];
+
+    flushSync(() => {
+      setBench(newBench);
+      setGamesPlayed(newGP);
+      setBenchSince(newBS);
+    });
+
+    syncState({
+      bench: newBench,
+      gamesPlayed: newGP,
+      benchSince: newBS
+    });
+  };
+
+  const reorderBench = (newOrder) => {
+    // benchSince sort is descending (higher = first), so assign descending values
+    const newBS = { ...benchSince };
+    newOrder.forEach((p, i) => {
+      newBS[p] = newOrder.length - i;
+    });
+
+    flushSync(() => {
+      setBenchSince(newBS);
+    });
+
+    syncState({ benchSince: newBS });
+  };
+
   const resetRanking = async () => {
     try {
       await rankingService.reset();
@@ -437,6 +471,6 @@ export function useBeachCam() {
     syncStatus,
     activeLiveMatch, joinLiveMatch,
     startGame, doRotation, resetMatch, triggerFlash,
-    endSession, promotePlayersToNext
+    endSession, promotePlayersToNext, removePlayerFromBench, reorderBench
   };
 }
