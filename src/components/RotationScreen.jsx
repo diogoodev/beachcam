@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { getInitials } from '../utils/helpers';
 
 export function RotationScreen({ h }) {
@@ -10,74 +10,14 @@ export function RotationScreen({ h }) {
   const [adding, setAdding] = useState(false);
   const inputRef = useRef(null);
 
-  // ── Drag-and-drop state ──
-  const [dragIdx, setDragIdx] = useState(null);
-  const [overIdx, setOverIdx] = useState(null);
-  const listRef = useRef(null);
-  const longPressTimer = useRef(null);
-  const touchStartY = useRef(0);
-  const isDragging = useRef(false);
-
-  const getItemIndexFromY = useCallback((clientY) => {
-    if (!listRef.current) return null;
-    const items = listRef.current.querySelectorAll('[data-queue-idx]');
-    for (const item of items) {
-      const rect = item.getBoundingClientRect();
-      if (clientY >= rect.top && clientY <= rect.bottom) {
-        return parseInt(item.getAttribute('data-queue-idx'), 10);
-      }
-    }
-    // If beyond last item, return last index
-    if (items.length > 0) {
-      const lastRect = items[items.length - 1].getBoundingClientRect();
-      if (clientY > lastRect.bottom) return items.length - 1;
-      const firstRect = items[0].getBoundingClientRect();
-      if (clientY < firstRect.top) return 0;
-    }
-    return null;
-  }, []);
-
-  const handleDragEnd = useCallback((sortedList) => {
-    if (dragIdx !== null && overIdx !== null && dragIdx !== overIdx) {
-      const newOrder = [...sortedList];
-      const [moved] = newOrder.splice(dragIdx, 1);
-      newOrder.splice(overIdx, 0, moved);
-      h.reorderBench(newOrder);
-    }
-    setDragIdx(null);
-    setOverIdx(null);
-    isDragging.current = false;
-    clearTimeout(longPressTimer.current);
-  }, [dragIdx, overIdx, h]);
-
-  const handleTouchStart = useCallback((e, idx) => {
-    touchStartY.current = e.touches[0].clientY;
-    longPressTimer.current = setTimeout(() => {
-      isDragging.current = true;
-      setDragIdx(idx);
-      setOverIdx(idx);
-      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(30);
-    }, 200);
-  }, []);
-
-  const handleTouchMove = useCallback((e) => {
-    if (!isDragging.current) {
-      // If finger moved too much before long press, cancel
-      const dy = Math.abs(e.touches[0].clientY - touchStartY.current);
-      if (dy > 10) clearTimeout(longPressTimer.current);
-      return;
-    }
-    e.preventDefault();
-    const idx = getItemIndexFromY(e.touches[0].clientY);
-    if (idx !== null) setOverIdx(idx);
-  }, [getItemIndexFromY]);
-
-  const handleTouchEnd = useCallback((sortedList) => {
-    clearTimeout(longPressTimer.current);
-    if (isDragging.current) {
-      handleDragEnd(sortedList);
-    }
-  }, [handleDragEnd]);
+  // Move player up or down in the sorted bench list
+  const movePlayer = (sortedList, fromIdx, direction) => {
+    const toIdx = fromIdx + direction;
+    if (toIdx < 0 || toIdx >= sortedList.length) return;
+    const newOrder = [...sortedList];
+    [newOrder[fromIdx], newOrder[toIdx]] = [newOrder[toIdx], newOrder[fromIdx]];
+    h.reorderBench(newOrder);
+  };
 
   // Foca o input quando o sheet abre
   useEffect(() => {
@@ -256,15 +196,7 @@ export function RotationScreen({ h }) {
         {/* Bottom Card (Waitlist) */}
         <section className="bg-card rounded-3xl p-5 flex flex-col gap-5 shadow-xl border border-white/5 transition-all">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <div className="text-xs font-bold text-white tracking-wide">FILA DE ESPERA</div>
-              {showFullBench && (
-                <span className="text-[9px] text-white/30 font-medium tracking-wider uppercase flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[12px]">drag_indicator</span>
-                  arraste para reordenar
-                </span>
-              )}
-            </div>
+            <div className="text-xs font-bold text-white tracking-wide">FILA DE ESPERA</div>
             <button 
               onClick={() => setShowFullBench(!showFullBench)}
               className="text-xs text-neon-green flex items-center font-bold px-3 py-1.5 rounded-full bg-[#2A331E] hover:bg-[#3b472a] transition-colors"
@@ -285,71 +217,50 @@ export function RotationScreen({ h }) {
               )}
             </div>
           ) : (
-            <div 
-              ref={listRef}
-              className="flex flex-col gap-1 mt-1 max-h-72 overflow-y-auto pr-2 custom-scrollbar"
-              onTouchMove={handleTouchMove}
-              onTouchEnd={() => handleTouchEnd(sortedBenchDisplay)}
-            >
-              {sortedBenchDisplay.length > 0 ? sortedBenchDisplay.map((p, i) => {
-                const isBeingDragged = dragIdx === i;
-                const isDropTarget = overIdx === i && dragIdx !== null && dragIdx !== i;
-
-                return (
-                  <div key={p} className="relative">
-                    {/* Drop indicator line */}
-                    {isDropTarget && dragIdx > i && (
-                      <div className="absolute -top-[3px] left-0 right-0 h-[3px] bg-[var(--neon-green)] rounded-full shadow-[0_0_8px_rgba(198,255,0,0.6)] z-20" />
-                    )}
-                    <div
-                      data-queue-idx={i}
-                      onTouchStart={(e) => handleTouchStart(e, i)}
-                      className={`flex justify-between items-center rounded-xl px-3 py-2.5 transition-all select-none ${
-                        isBeingDragged
-                          ? 'bg-[var(--neon-green)]/10 border border-[var(--neon-green)]/40 scale-[1.02] shadow-[0_0_20px_rgba(198,255,0,0.15)]'
-                          : 'border border-transparent hover:bg-white/5'
-                      }`}
-                      style={{ touchAction: isDragging.current ? 'none' : 'auto' }}
-                    >
-                      <div className="flex items-center gap-3">
-                        {/* Drag handle */}
-                        <span className={`material-symbols-outlined text-[18px] cursor-grab active:cursor-grabbing transition-colors ${
-                          isBeingDragged ? 'text-[var(--neon-green)]' : 'text-white/25'
-                        }`}>drag_indicator</span>
-                        <span className={`text-xs font-bold w-4 transition-colors ${
-                          isBeingDragged ? 'text-[var(--neon-green)]' : 'text-[var(--neon-green)]'
-                        }`}>#{i+1}</span>
-                        <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center bg-white/5 text-[10px] font-bold">
-                          {getInitials(p)}
-                        </div>
-                        <span className="font-semibold text-sm">{p}</span>
-                      </div>
-                      <div className="flex gap-2 items-center">
-                        <div className="text-[10px] bg-white/10 px-2 py-1 rounded-md text-gray-300 font-bold uppercase tracking-wider">
-                          {h.gamesPlayed[p] || 0} jogos
-                        </div>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); if(window.confirm(`Remover ${p} da fila de espera?`)) h.removePlayerFromBench(p); }}
-                          className="text-red-400 opacity-60 hover:opacity-100 p-1 rounded-md hover:bg-red-500/20 transition-all flex items-center justify-center -mr-1"
-                          title="Remover da Fila"
-                        >
-                          <span className="material-symbols-outlined text-[16px]">close</span>
-                        </button>
-                      </div>
+            <div className="flex flex-col gap-1 mt-1 max-h-72 overflow-y-auto pr-2 custom-scrollbar">
+              {sortedBenchDisplay.length > 0 ? sortedBenchDisplay.map((p, i) => (
+                <div key={p} className="flex justify-between items-center rounded-xl px-2 py-2 hover:bg-white/5 transition-all">
+                  <div className="flex items-center gap-2">
+                    {/* Up/Down arrows */}
+                    <div className="flex flex-col gap-0.5">
+                      <button
+                        onClick={() => movePlayer(sortedBenchDisplay, i, -1)}
+                        disabled={i === 0}
+                        className="text-white/40 hover:text-[var(--neon-green)] disabled:opacity-20 disabled:pointer-events-none p-0.5 rounded transition-colors active:scale-90"
+                        title="Subir na fila"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">keyboard_arrow_up</span>
+                      </button>
+                      <button
+                        onClick={() => movePlayer(sortedBenchDisplay, i, 1)}
+                        disabled={i === sortedBenchDisplay.length - 1}
+                        className="text-white/40 hover:text-[var(--neon-green)] disabled:opacity-20 disabled:pointer-events-none p-0.5 rounded transition-colors active:scale-90"
+                        title="Descer na fila"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">keyboard_arrow_down</span>
+                      </button>
                     </div>
-                    {/* Drop indicator line (below) */}
-                    {isDropTarget && dragIdx < i && (
-                      <div className="absolute -bottom-[3px] left-0 right-0 h-[3px] bg-[var(--neon-green)] rounded-full shadow-[0_0_8px_rgba(198,255,0,0.6)] z-20" />
-                    )}
+                    <span className="text-[var(--neon-green)] text-xs font-bold w-4">#{i+1}</span>
+                    <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center bg-white/5 text-[10px] font-bold">
+                      {getInitials(p)}
+                    </div>
+                    <span className="font-semibold text-sm">{p}</span>
                   </div>
-                );
-              }) : (
-                <div className="text-sm text-gray-sub italic">Ninguém na fila</div>
-              )}
-              {dragIdx !== null && (
-                <div className="text-[10px] text-white/30 text-center pt-2 font-medium tracking-wider uppercase">
-                  Solte para reordenar
+                  <div className="flex gap-2 items-center">
+                    <div className="text-[10px] bg-white/10 px-2 py-1 rounded-md text-gray-300 font-bold uppercase tracking-wider">
+                      {h.gamesPlayed[p] || 0} jogos
+                    </div>
+                    <button 
+                      onClick={() => { if(window.confirm(`Remover ${p} da fila de espera?`)) h.removePlayerFromBench(p); }}
+                      className="text-red-400 opacity-60 hover:opacity-100 p-1 rounded-md hover:bg-red-500/20 transition-all flex items-center justify-center -mr-1"
+                      title="Remover da Fila"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">close</span>
+                    </button>
+                  </div>
                 </div>
+              )) : (
+                <div className="text-sm text-gray-sub italic">Ninguém na fila</div>
               )}
             </div>
           )}
