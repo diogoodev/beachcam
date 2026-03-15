@@ -246,11 +246,7 @@ export function GameScreen({ h }) {
                 <div className="text-[var(--neon-orange)] font-black uppercase tracking-wider text-[10px] font-['Outfit'] mb-0.5">Próxima Dupla</div>
                 <div className="text-white text-xs font-medium truncate">
                   {h.bench.length >= 2 ? (() => {
-                    const sorted = [...h.bench].sort((a,b) => {
-                      const d = (h.benchSince[b]??0) - (h.benchSince[a]??0);
-                      return d !== 0 ? d : (h.gamesPlayed[a]??0) - (h.gamesPlayed[b]??0);
-                    });
-                    const next = sorted.slice(0, 2);
+                    const next = h.sortedBench.slice(0, 2);
                     return `${next[0].split(" ")[0]} & ${next[1].split(" ")[0]}`;
                   })() : h.bench.length === 1 ? (
                     <span className="text-white/50 italic">Fila isolada ({h.bench[0].split(" ")[0]})</span>

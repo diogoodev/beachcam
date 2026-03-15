@@ -57,11 +57,8 @@ export function RotationScreen({ h }) {
     setShowOverrideSheet(false);
   };
 
-  // Bench sorting logic
-  const sortedBenchDisplay = [...h.bench].sort((a,b) => {
-    const d = (h.benchSince[b]??0) - (h.benchSince[a]??0);
-    return d !== 0 ? d : (h.gamesPlayed[a]??0) - (h.gamesPlayed[b]??0);
-  });
+  // Component relies on shared bench sorting logic now
+  const sortedBenchDisplay = h.sortedBench;
 
   // Next Duo Prediction
   const nextDuo = sortedBenchDisplay.slice(0, 2);

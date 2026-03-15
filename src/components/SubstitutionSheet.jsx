@@ -5,11 +5,8 @@ export function SubstitutionSheet({ h, onClose }) {
   const [selectedOut, setSelectedOut] = useState(null);
   const [selectedIn, setSelectedIn] = useState(null);
 
-  // Bench sorting logic (same as RotationScreen, to show who is next)
-  const sortedBench = [...h.bench].sort((a,b) => {
-    const d = (h.benchSince[b]??0) - (h.benchSince[a]??0);
-    return d !== 0 ? d : (h.gamesPlayed[a]??0) - (h.gamesPlayed[b]??0);
-  });
+  // Bench sorting logic (shared from hook)
+  const sortedBench = h.sortedBench;
 
   const handleSubstitute = () => {
     if (selectedOut && selectedIn) {

@@ -107,6 +107,13 @@ export function useBeachCam() {
 
   const todayDuoRanking = useMemo(() => calculateDuoRanking(todayMatches), [todayMatches, calculateDuoRanking]);
 
+  const sortedBench = useMemo(() => {
+    return [...bench].sort((a,b) => {
+      const d = (benchSince[b]??0) - (benchSince[a]??0);
+      return d !== 0 ? d : (gamesPlayed[a]??0) - (gamesPlayed[b]??0);
+    });
+  }, [bench, benchSince, gamesPlayed]);
+
   const applyRemoteState = useCallback((st) => {
     if (st.screen) setScreen(st.screen);
     if (st.teamA !== undefined) setTeamA(st.teamA);
@@ -571,6 +578,6 @@ export function useBeachCam() {
     startGame, doRotation, resetMatch, triggerFlash,
     endSession, promotePlayersToNext, removePlayerFromBench, reorderBench,
     revertSet, substitutePlayer, calculateDuoRanking,
-    todayMatches, todayRanking, todayDuoRanking
+    todayMatches, todayRanking, todayDuoRanking, sortedBench
   };
 }
