@@ -139,7 +139,7 @@ export function useBeachCam() {
     bench: rotation.bench, setBench: rotation._setters.setBench,
     pointIdxA: scoring.pointIdxA, pointIdxB: scoring.pointIdxB,
     setsA: scoring.setsA, setsB: scoring.setsB,
-    addPoint: scoring.addPoint, removePoint: scoring.removePoint,
+    addPoint: scoring.addPoint, removePoint: scoring.removePoint, undoLastPoint: scoring.undoLastPoint,
     bestOf: scoring.bestOf, setBestOf: scoring._setters.setBestOf, setsToWin: scoring.setsToWin,
     matchWinner: scoring.matchWinner, setMatchWinner: scoring._setters.setMatchWinner,
     rankingRows: sync.rankingRows, matchHistory: sync.matchHistory, resetRanking: sync.resetRanking,

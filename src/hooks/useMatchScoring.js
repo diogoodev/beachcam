@@ -113,6 +113,18 @@ export function useMatchScoring(onSyncRef) {
     }
   }, [onSyncRef, setPointIdxA, setPointIdxB, setSetsA, setSetsB, setMatchWinner, setMatchSetHistory, setGameLog, setMatchSaved]);
 
+  const undoLastPoint = useCallback(() => {
+    if (!gameLog || gameLog.length === 0) return;
+    const lastEvent = gameLog.find(event => event.type === 'point');
+    if (!lastEvent) return;
+    
+    if (lastEvent.team === "A") {
+      removePoint("A");
+    } else if (lastEvent.team === "B") {
+      removePoint("B");
+    }
+  }, [gameLog, removePoint]);
+
   // Setters exposed for applyRemoteState and orchestrator
   const setters = {
     setPointIdxA, setPointIdxB, setSetsA, setSetsB,
@@ -128,7 +140,7 @@ export function useMatchScoring(onSyncRef) {
     matchSaved, setMatchSaved,
     flash, gameLog, matchSetHistory,
     // Actions
-    addPoint, removePoint, revertSet, resetMatch, triggerFlash,
+    addPoint, removePoint, revertSet, resetMatch, triggerFlash, undoLastPoint,
     // Internal setters (for orchestrator)
     _setters: setters,
   };

@@ -2,10 +2,20 @@ import React, { useState } from 'react';
 import { POINT_SEQUENCE, POINT_LABELS } from '../utils/constants';
 import { SubstitutionSheet } from './SubstitutionSheet';
 import { ShareSheet } from './ShareSheet';
+import { useBluetoothRemote } from '../hooks/useBluetoothRemote';
 
 export function GameScreen({ h }) {
   const [showSubstitution, setShowSubstitution] = useState(false);
   const [shareMatchData, setShareMatchData] = useState(null);
+
+  useBluetoothRemote(
+    (clicks) => {
+      if (clicks === 1) h.addPoint("A");
+      else if (clicks === 2) h.addPoint("B");
+      else if (clicks >= 3) h.undoLastPoint();
+    }, 
+    !h.matchWinner // Only active when the game is not finished
+  );
   
   const currentLabelA   = POINT_LABELS[POINT_SEQUENCE[h.pointIdxA]] ?? "0";
   const currentLabelB   = POINT_LABELS[POINT_SEQUENCE[h.pointIdxB]] ?? "0";
@@ -97,6 +107,12 @@ export function GameScreen({ h }) {
 
       <main className="flex-1 w-full max-w-sm px-4 flex flex-col justify-center gap-10 relative z-10 h-full">
         
+        {/* Bluetooth Remote Indicator */}
+        <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10" title="Controle Bluetooth Ativo">
+          <span className="material-symbols-outlined text-[14px] text-[var(--neon-blue)] animate-pulse">bluetooth</span>
+          <span className="text-[9px] uppercase font-bold tracking-widest text-white/50">ON</span>
+        </div>
+
         {/* Team 1 (Blue) */}
         <section className="flex flex-col items-center gap-6 relative group">
           <div className="flex flex-col items-center gap-2">
