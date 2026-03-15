@@ -8,7 +8,7 @@ export function GameScreen({ h }) {
   const [showSubstitution, setShowSubstitution] = useState(false);
   const [shareMatchData, setShareMatchData] = useState(null);
 
-  useBluetoothRemote(
+  const { remoteInputProps } = useBluetoothRemote(
     (clicks) => {
       if (clicks === 1) h.addPoint("A");
       else if (clicks === 2) h.addPoint("B");
@@ -44,6 +44,8 @@ export function GameScreen({ h }) {
 
   return (
     <div className="text-white flex flex-col items-center justify-center relative min-h-screen pb-32 pt-16">
+      {/* Hidden input to capture Bluetooth Remote KeyEvents on iOS */}
+      <input {...remoteInputProps} />
       
       {/* Background FX */}
       <div className="central-glow"></div>
