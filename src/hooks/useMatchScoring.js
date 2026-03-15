@@ -115,15 +115,21 @@ export function useMatchScoring(onSyncRef) {
 
   const undoLastPoint = useCallback(() => {
     if (!gameLog || gameLog.length === 0) return;
-    const lastEvent = gameLog.find(event => event.type === 'point');
-    if (!lastEvent) return;
+    // gameLog is newest-first. Find first "point" entry.
+    const idx = gameLog.findIndex(event => event.type === 'point');
+    if (idx === -1) return;
+    
+    const lastEvent = gameLog[idx];
+    
+    // Remove the log entry FIRST to prevent duplicate undo
+    setGameLog(prev => prev.filter((_, i) => i !== idx));
     
     if (lastEvent.team === "A") {
       removePoint("A");
     } else if (lastEvent.team === "B") {
       removePoint("B");
     }
-  }, [gameLog, removePoint]);
+  }, [gameLog, removePoint, setGameLog]);
 
   // Setters exposed for applyRemoteState and orchestrator
   const setters = {

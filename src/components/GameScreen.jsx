@@ -21,6 +21,10 @@ export function GameScreen({ h }) {
   });
 
   // ── MediaSession API (Bluetooth headphones) ──
+  // Use refs so the effect doesn't re-run on every render
+  const hRef = React.useRef(h);
+  hRef.current = h;
+
   useEffect(() => {
     if (!('mediaSession' in navigator) || h.matchWinner) return;
 
@@ -41,10 +45,10 @@ export function GameScreen({ h }) {
       artist: 'Controle Remoto',
     });
 
-    navigator.mediaSession.setActionHandler('play', () => h.addPoint("A"));
-    navigator.mediaSession.setActionHandler('pause', () => h.addPoint("B"));
-    navigator.mediaSession.setActionHandler('previoustrack', () => h.undoLastPoint());
-    navigator.mediaSession.setActionHandler('nexttrack', () => h.addPoint("A"));
+    navigator.mediaSession.setActionHandler('play', () => hRef.current.addPoint("A"));
+    navigator.mediaSession.setActionHandler('pause', () => hRef.current.addPoint("B"));
+    navigator.mediaSession.setActionHandler('previoustrack', () => hRef.current.undoLastPoint());
+    navigator.mediaSession.setActionHandler('nexttrack', () => hRef.current.addPoint("B"));
 
     return () => {
       audio.pause();
@@ -54,7 +58,7 @@ export function GameScreen({ h }) {
       navigator.mediaSession.setActionHandler('previoustrack', null);
       navigator.mediaSession.setActionHandler('nexttrack', null);
     };
-  }, [h, h.matchWinner]);
+  }, [h.matchWinner]); // Only re-run when match finishes/restarts
   
   const currentLabelA   = POINT_LABELS[POINT_SEQUENCE[h.pointIdxA]] ?? "0";
   const currentLabelB   = POINT_LABELS[POINT_SEQUENCE[h.pointIdxB]] ?? "0";

@@ -14,16 +14,19 @@ export function useRemoteControl({ onPointA, onPointB, onUndo, isActive = false 
   const [lastRemoteAction, setLastRemoteAction] = useState(null);
   const channelRef = useRef(null);
 
-  // Generate a random 4-digit code
-  const generateCode = useCallback(() => {
-    const code = String(Math.floor(1000 + Math.random() * 9000));
-    setSessionCode(code);
-    return code;
-  }, []);
+  // Use refs for callbacks to avoid stale closures in the channel listener
+  const onPointARef = useRef(onPointA);
+  const onPointBRef = useRef(onPointB);
+  const onUndoRef = useRef(onUndo);
+  onPointARef.current = onPointA;
+  onPointBRef.current = onPointB;
+  onUndoRef.current = onUndo;
 
   // Start listening on the channel
   const startSession = useCallback(() => {
-    const code = generateCode();
+    // Generate a random 4-digit code
+    const code = String(Math.floor(1000 + Math.random() * 9000));
+    setSessionCode(code);
     
     // Clean up any existing channel
     if (channelRef.current) {
@@ -41,20 +44,20 @@ export function useRemoteControl({ onPointA, onPointB, onUndo, isActive = false 
         setLastRemoteAction({ action, device, time: Date.now() });
         setRemoteConnected(true);
 
+        // Use refs to always call the latest callback
         switch (action) {
           case 'ADD_POINT_A':
-            onPointA?.();
+            onPointARef.current?.();
             break;
           case 'ADD_POINT_B':
-            onPointB?.();
+            onPointBRef.current?.();
             break;
           case 'UNDO':
-            onUndo?.();
+            onUndoRef.current?.();
             break;
         }
       })
       .on('broadcast', { event: 'ping' }, () => {
-        // Remote device connected — acknowledge
         setRemoteConnected(true);
         channel.send({
           type: 'broadcast',
@@ -66,7 +69,7 @@ export function useRemoteControl({ onPointA, onPointB, onUndo, isActive = false 
 
     channelRef.current = channel;
     return code;
-  }, [generateCode, onPointA, onPointB, onUndo]);
+  }, []); // No dependencies needed — uses refs for callbacks
 
   // Stop and cleanup
   const stopSession = useCallback(() => {
@@ -76,13 +79,14 @@ export function useRemoteControl({ onPointA, onPointB, onUndo, isActive = false 
     }
     setSessionCode(null);
     setRemoteConnected(false);
+    setLastRemoteAction(null);
   }, []);
 
   // Auto-start/stop based on isActive
   useEffect(() => {
-    if (isActive && !sessionCode) {
+    if (isActive && !channelRef.current) {
       startSession();
-    } else if (!isActive && sessionCode) {
+    } else if (!isActive && channelRef.current) {
       stopSession();
     }
     
@@ -92,7 +96,7 @@ export function useRemoteControl({ onPointA, onPointB, onUndo, isActive = false 
         channelRef.current = null;
       }
     };
-  }, [isActive]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isActive, startSession, stopSession]);
 
   return {
     sessionCode,
