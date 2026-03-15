@@ -352,8 +352,14 @@ export function useBeachCam() {
     }
   }, [syncState, setPointIdxA, setPointIdxB, setSetsA, setSetsB, setMatchWinner, setMatchSetHistory, setGameLog, setMatchSaved]);
 
+  const lastPointTime = useRef(0);
+
   const addPoint = useCallback((team) => {
     if (matchWinner) return;
+    const now = Date.now();
+    if (now - lastPointTime.current < 400) return;
+    lastPointTime.current = now;
+    
     triggerFlash(team);
     const nextIdxA = team === "A" ? pointIdxA + 1 : pointIdxA;
     const nextIdxB = team === "B" ? pointIdxB + 1 : pointIdxB;
@@ -367,6 +373,8 @@ export function useBeachCam() {
         setNum: prev.length+1, winner: sw,
         labelA: pA === "SET" ? "SET" : POINT_LABELS[POINT_SEQUENCE[pointIdxA]],
         labelB: pB === "SET" ? "SET" : POINT_LABELS[POINT_SEQUENCE[pointIdxB]],
+        pointIdxA: pointIdxA,
+        pointIdxB: pointIdxB
       }]);
       setSetsA(newSA); setSetsB(newSB); setPointIdxA(0); setPointIdxB(0);
       setGameLog(prev => [{ time: formatTime(), team: sw, type:"set" }, ...prev].slice(0,50));
@@ -393,6 +401,61 @@ export function useBeachCam() {
     if (team === "B" && pointIdxB > 0) { nB = pointIdxB - 1; setPointIdxB(nB); }
     syncState({ pointIdxA: nA, pointIdxB: nB });
   }, [matchWinner, pointIdxA, pointIdxB, syncState, setPointIdxA, setPointIdxB]);
+
+  const revertSet = useCallback(() => {
+    if (setsA + setsB === 0 || matchWinner !== null) return;
+    
+    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(50);
+    
+    const lastSet = matchSetHistory[matchSetHistory.length - 1];
+    if (!lastSet) return;
+    
+    const newSA = lastSet.winner === "A" ? setsA - 1 : setsA;
+    const newSB = lastSet.winner === "B" ? setsB - 1 : setsB;
+    
+    const newHistory = matchSetHistory.slice(0, -1);
+    
+    const restoredIdxA = lastSet.pointIdxA ?? 0;
+    const restoredIdxB = lastSet.pointIdxB ?? 0;
+    
+    setSetsA(newSA);
+    setSetsB(newSB);
+    setPointIdxA(restoredIdxA);
+    setPointIdxB(restoredIdxB);
+    setMatchSetHistory(newHistory);
+    setGameLog(prev => [{ time: formatTime(), team: "system", type:"revert_set" }, ...prev].slice(0,50));
+    
+    syncState({ setsA: newSA, setsB: newSB, pointIdxA: restoredIdxA, pointIdxB: restoredIdxB });
+  }, [setsA, setsB, matchWinner, matchSetHistory, syncState, setSetsA, setSetsB, setPointIdxA, setPointIdxB, setMatchSetHistory, setGameLog]);
+
+  const substitutePlayer = useCallback((playerOut, playerIn) => {
+    if (!playerOut || !playerIn) return;
+    
+    const isInTeamA = teamA.includes(playerOut);
+    const isInTeamB = teamB.includes(playerOut);
+    
+    if (!isInTeamA && !isInTeamB) return;
+    
+    // update teams
+    const newTeamA = isInTeamA ? teamA.map(p => p === playerOut ? playerIn : p) : teamA;
+    const newTeamB = isInTeamB ? teamB.map(p => p === playerOut ? playerIn : p) : teamB;
+    
+    // update bench: remove playerIn, push playerOut to end
+    const filteredBench = bench.filter(p => p !== playerIn);
+    const newBench = [...filteredBench, playerOut];
+    
+    // update benchSince: playerOut gets 0 (last in queue)
+    const newBS = { ...benchSince, [playerOut]: 0 };
+    
+    flushSync(() => {
+      setTeamA(newTeamA);
+      setTeamB(newTeamB);
+      setBench(newBench);
+      setBenchSince(newBS);
+    });
+    
+    syncState({ teamA: newTeamA, teamB: newTeamB, bench: newBench, benchSince: newBS });
+  }, [teamA, teamB, bench, benchSince, syncState, setTeamA, setTeamB, setBench, setBenchSince]);
 
   const startGame = (tA, tB, b) => {
     const initGP = {}, initBS = {};
@@ -471,6 +534,7 @@ export function useBeachCam() {
     syncStatus,
     activeLiveMatch, joinLiveMatch,
     startGame, doRotation, resetMatch, triggerFlash,
-    endSession, promotePlayersToNext, removePlayerFromBench, reorderBench
+    endSession, promotePlayersToNext, removePlayerFromBench, reorderBench,
+    revertSet, substitutePlayer
   };
 }

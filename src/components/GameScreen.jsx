@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { POINT_SEQUENCE, POINT_LABELS } from '../utils/constants';
+import { SubstitutionSheet } from './SubstitutionSheet';
 
 export function GameScreen({ h }) {
+  const [showSubstitution, setShowSubstitution] = useState(false);
   const currentLabelA   = POINT_LABELS[POINT_SEQUENCE[h.pointIdxA]] ?? "0";
   const currentLabelB   = POINT_LABELS[POINT_SEQUENCE[h.pointIdxB]] ?? "0";
 
@@ -81,10 +83,22 @@ export function GameScreen({ h }) {
             <h1 className="text-xl md:text-3xl font-black tracking-[0.2em] md:tracking-[0.3em] uppercase opacity-90 text-center px-4 line-clamp-2">
               {h.teamA.join(" & ")}
             </h1>
-            <div className="flex gap-3">
+            <div className="flex gap-3 relative">
               {renderSetDots(h.setsA).map((isActive, idx) => (
                 <div key={idx} className={`set-dot ${isActive ? 'dot-blue-active' : 'dot-blue'}`}></div>
               ))}
+              
+              {/* Revert Set Button */}
+              {h.setsA + h.setsB > 0 && !h.matchWinner && (
+                <button
+                  onClick={h.revertSet}
+                  className="absolute -right-10 top-1/2 -translate-y-1/2 p-2 text-white/30 hover:text-[var(--neon-blue)] transition-colors active:scale-90"
+                  title="Reverter último set"
+                  aria-label="Reverter último set"
+                >
+                  <span className="material-symbols-outlined text-[18px]">history</span>
+                </button>
+              )}
             </div>
           </div>
           <div className="flex gap-4 relative">
@@ -160,7 +174,19 @@ export function GameScreen({ h }) {
             </button>
           </div>
           <div className="flex flex-col items-center gap-2">
-            <div className="flex gap-3">
+            <div className="flex gap-3 relative">
+              {/* Revert Set Button */}
+              {h.setsA + h.setsB > 0 && !h.matchWinner && (
+                <button
+                  onClick={h.revertSet}
+                  className="absolute -left-10 top-1/2 -translate-y-1/2 p-2 text-white/30 hover:text-[var(--neon-green)] transition-colors active:scale-90 flex items-center justify-center transform -scale-x-100"
+                  title="Reverter último set"
+                  aria-label="Reverter último set"
+                >
+                  <span className="material-symbols-outlined text-[18px]">history</span>
+                </button>
+              )}
+              
               {renderSetDots(h.setsB).map((isActive, idx) => (
                 <div key={idx} className={`set-dot ${isActive ? 'dot-green-active' : 'dot-green'}`}></div>
               ))}
@@ -171,27 +197,58 @@ export function GameScreen({ h }) {
           </div>
         </section>
 
-        {/* Match Status / Rotation Bento Button */}
-        <button
-          onClick={() => h.setScreen("rotation")}
-          className="w-full mt-2 bg-[#0a0a0a] border border-white/10 rounded-3xl p-4 flex items-center justify-between group hover:bg-white/5 transition-all shadow-2xl active:scale-95 relative overflow-hidden"
-        >
-          {/* Subtle glow effect on hover */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[var(--neon-blue)]/0 via-[var(--neon-blue)]/5 to-[var(--neon-green)]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        {/* Bottom Bar: Action buttons */}
+        <div className="flex gap-3 mt-2">
+          {/* Button to open Substitution Sheet */}
+          <button
+            onClick={() => setShowSubstitution(true)}
+            disabled={h.bench.length === 0}
+            className="flex-1 bg-[#0a0a0a] border border-white/10 rounded-2xl p-3 flex items-center justify-center gap-2 hover:bg-white/5 transition-all shadow-xl active:scale-95 disabled:opacity-30 disabled:pointer-events-none group"
+          >
+            <div className="bg-white/5 p-1.5 rounded-lg group-hover:bg-white/10 transition-colors shrink-0">
+              <span className="material-symbols-outlined font-black text-[18px]">swap_horiz</span>
+            </div>
+            <span className="text-white font-bold uppercase tracking-wider text-xs font-['Outfit']">Substituir</span>
+          </button>
           
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="bg-white/5 p-3 rounded-2xl border border-white/5 group-hover:bg-[var(--neon-blue)] group-hover:text-black transition-colors duration-300">
-              <span className="material-symbols-outlined font-black">groups</span>
+          {/* Next Duo / Bento Card */}
+          <button
+            onClick={() => h.setScreen("rotation")}
+            className="flex-[2] bg-[#0a0a0a] border border-white/10 rounded-2xl p-3 flex items-center justify-between group hover:bg-white/5 transition-all shadow-xl active:scale-95 relative overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-[var(--neon-orange)]/0 via-[var(--neon-orange)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            
+            <div className="flex items-center gap-3 relative z-10 w-full">
+              <div className="bg-white/5 p-1.5 rounded-lg border border-white/5 group-hover:bg-[var(--neon-orange)] group-hover:text-black transition-colors duration-300 shrink-0">
+                <span className="material-symbols-outlined font-black text-[18px]">queue</span>
+              </div>
+              <div className="text-left overflow-hidden flex-1">
+                <div className="text-[var(--neon-orange)] font-black uppercase tracking-wider text-[10px] font-['Outfit'] mb-0.5">Próxima Dupla</div>
+                <div className="text-white text-xs font-medium truncate">
+                  {h.bench.length >= 2 ? (() => {
+                    const sorted = [...h.bench].sort((a,b) => {
+                      const d = (h.benchSince[b]??0) - (h.benchSince[a]??0);
+                      return d !== 0 ? d : (h.gamesPlayed[a]??0) - (h.gamesPlayed[b]??0);
+                    });
+                    const next = sorted.slice(0, 2);
+                    return `${next[0].split(" ")[0]} & ${next[1].split(" ")[0]}`;
+                  })() : h.bench.length === 1 ? (
+                    <span className="text-white/50 italic">Fila isolada ({h.bench[0].split(" ")[0]})</span>
+                  ) : (
+                    <span className="text-white/50 italic">Ninguém na fila</span>
+                  )}
+                </div>
+              </div>
+              <span className="material-symbols-outlined text-white/30 group-hover:text-white transition-colors text-[18px]">chevron_right</span>
             </div>
-            <div className="text-left">
-              <div className="text-white font-black uppercase tracking-wider text-sm font-['Outfit']">Status da Partida</div>
-              <div className="text-white/50 text-xs font-medium mt-0.5">Fila de espera & quadra</div>
-            </div>
-          </div>
-          <span className="material-symbols-outlined text-white/30 group-hover:text-white transition-colors relative z-10">chevron_right</span>
-        </button>
+          </button>
+        </div>
 
       </main>
+      
+      {showSubstitution && (
+        <SubstitutionSheet h={h} onClose={() => setShowSubstitution(false)} />
+      )}
     </div>
   );
 }
