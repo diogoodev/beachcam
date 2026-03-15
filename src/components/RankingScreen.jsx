@@ -13,22 +13,8 @@ export function RankingScreen({ h }) {
   // Sort players by wins
   const sortedPlayers = [...playersSource].sort((a,b) => b.wins - a.wins);
 
-  // Calcula ranking de duplas a partir do matchHistory (fonte única de verdade)
-  const duoRankings = useMemo(() => {
-    const stats = {};
-    matchSource.forEach(m => {
-      const duo = [m.winner_1, m.winner_2].sort().join(" / ");
-      const loserDuo = [m.loser_1, m.loser_2].sort().join(" / ");
-      stats[duo] = stats[duo] ?? { name: duo, players: [m.winner_1, m.winner_2].sort(), wins: 0, games: 0 };
-      stats[loserDuo] = stats[loserDuo] ?? { name: loserDuo, players: [m.loser_1, m.loser_2].sort(), wins: 0, games: 0 };
-      stats[duo].wins += 1;
-      stats[duo].games += 1;
-      stats[loserDuo].games += 1;
-    });
-    return Object.values(stats)
-      .filter(d => d.wins > 0)
-      .sort((a,b) => b.wins - a.wins);
-  }, [matchSource]);
+  // Calcula ranking de duplas a partir do matchHistory (fonte única de verdade) usando a função do hook
+  const duoRankings = useMemo(() => h.calculateDuoRanking(matchSource), [matchSource, h.calculateDuoRanking]);
 
   const renderPodium = (items, isDuo = false) => {
     if (items.length === 0) return <div className="text-gray-500 text-center py-4 italic">Sem dados suficientes</div>;

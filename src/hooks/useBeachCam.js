@@ -89,9 +89,9 @@ export function useBeachCam() {
       .sort((a, b) => b.wins - a.wins);
   }, [todayMatches]);
 
-  const todayDuoRanking = useMemo(() => {
+  const calculateDuoRanking = useCallback((matches) => {
     const stats = {};
-    todayMatches.forEach(m => {
+    matches.forEach(m => {
       const duo = [m.winner_1, m.winner_2].sort().join(" / ");
       const loserDuo = [m.loser_1, m.loser_2].sort().join(" / ");
       stats[duo] = stats[duo] ?? { name: duo, players: [m.winner_1, m.winner_2].sort(), wins: 0, games: 0 };
@@ -103,7 +103,9 @@ export function useBeachCam() {
     return Object.values(stats)
       .filter(d => d.wins > 0)
       .sort((a,b) => b.wins - a.wins);
-  }, [todayMatches]);
+  }, []);
+
+  const todayDuoRanking = useMemo(() => calculateDuoRanking(todayMatches), [todayMatches, calculateDuoRanking]);
 
   const applyRemoteState = useCallback((st) => {
     if (st.screen) setScreen(st.screen);
@@ -568,7 +570,7 @@ export function useBeachCam() {
     activeLiveMatch, joinLiveMatch,
     startGame, doRotation, resetMatch, triggerFlash,
     endSession, promotePlayersToNext, removePlayerFromBench, reorderBench,
-    revertSet, substitutePlayer,
+    revertSet, substitutePlayer, calculateDuoRanking,
     todayMatches, todayRanking, todayDuoRanking
   };
 }
