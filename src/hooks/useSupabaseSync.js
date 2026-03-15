@@ -95,13 +95,16 @@ export function useSupabaseSync() {
       const sL = winner === "A" ? sb : sa;
       await matchesService.save(winner, winTeam, loseTeam, sW, sL);
 
+      // Fetch fresh ranking data to avoid stale closure
+      const freshRanking = await rankingService.fetchAll();
+
       await Promise.all([
         ...winTeam.map(p => {
-          const existing = rankingRows.find(r => r.player_name === p);
+          const existing = freshRanking.find(r => r.player_name === p);
           return rankingService.upsert(p, (existing?.wins ?? 0) + 1, (existing?.games ?? 0) + 1);
         }),
         ...loseTeam.map(p => {
-          const existing = rankingRows.find(r => r.player_name === p);
+          const existing = freshRanking.find(r => r.player_name === p);
           return rankingService.upsert(p, existing?.wins ?? 0, (existing?.games ?? 0) + 1);
         })
       ]);
@@ -110,7 +113,7 @@ export function useSupabaseSync() {
       console.error("Failed to save match", err);
       setSyncStatus("error");
     }
-  }, [rankingRows]);
+  }, []);
 
   const resetRanking = async () => {
     try {
@@ -131,11 +134,6 @@ export function useSupabaseSync() {
     setActiveLiveMatch(st);
     liveMatchService.sync(st);
   }, [setLocalTimestamp]);
-
-  const syncDirectState = useCallback((st) => {
-    setActiveLiveMatch(st);
-    liveMatchService.sync(st);
-  }, []);
 
   // ── Ranking Computations ──
   const todayMatches = useMemo(() => {
@@ -215,7 +213,7 @@ export function useSupabaseSync() {
     // Match persistence
     saveMatch, resetRanking,
     // Live sync
-    syncState, syncDirectState, handleRemoteUpdateRef,
+    syncState, handleRemoteUpdateRef,
     // Ranking computations
     todayMatches, todayRanking, todayDuoRanking, calculateDuoRanking,
     // Internal state setters (for orchestrator)

@@ -22,9 +22,14 @@ export function useMatchScoring(onSyncRef) {
 
   const setsToWin = Math.ceil(bestOf / 2);
 
+  const flashTimerRef = useRef(null);
   const triggerFlash = (val) => {
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
     setFlash(val);
-    setTimeout(() => setFlash(null), 700);
+    flashTimerRef.current = setTimeout(() => {
+      setFlash(null);
+      flashTimerRef.current = null;
+    }, 700);
     if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(50);
   };
 
