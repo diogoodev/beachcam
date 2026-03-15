@@ -1,8 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export function SettingsPanel({ h, onClose }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmEnd, setConfirmEnd] = useState(false);
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
 
   return (
     <>

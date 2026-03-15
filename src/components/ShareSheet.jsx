@@ -10,6 +10,13 @@ export function ShareSheet({ type, data, isDuo = false, duoData = [], onClose })
   const prevUrlRef = React.useRef(null);
 
   useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
+  useEffect(() => {
     let active = true;
     
     // Revoke previous URL to prevent memory leak

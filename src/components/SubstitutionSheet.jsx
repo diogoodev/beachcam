@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getInitials } from '../utils/helpers';
 
 export function SubstitutionSheet({ h, onClose }) {
   const [selectedOut, setSelectedOut] = useState(null);
   const [selectedIn, setSelectedIn] = useState(null);
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
 
   // Bench sorting logic (shared from hook)
   const sortedBench = h.sortedBench;
