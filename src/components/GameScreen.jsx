@@ -8,7 +8,7 @@ export function GameScreen({ h }) {
   const [showSubstitution, setShowSubstitution] = useState(false);
   const [shareMatchData, setShareMatchData] = useState(null);
 
-  const { remoteInputProps } = useBluetoothRemote(
+  const { remoteInputProps, lastEvent, debugMode, setDebugMode } = useBluetoothRemote(
     (clicks) => {
       if (clicks === 1) h.addPoint("A");
       else if (clicks === 2) h.addPoint("B");
@@ -50,6 +50,29 @@ export function GameScreen({ h }) {
       {/* Background FX */}
       <div className="central-glow"></div>
       <div className="center-separator"></div>
+
+      {/* Bluetooth Remote Debug Overlay */}
+      {debugMode && (
+        <div className="fixed top-20 left-4 right-4 z-[200] bg-black/95 border border-[var(--neon-blue)] rounded-2xl p-4 text-xs font-mono backdrop-blur-xl shadow-[0_0_30px_rgba(0,245,255,0.3)]">
+          <div className="text-[var(--neon-blue)] font-bold uppercase tracking-widest text-[10px] mb-2">🔧 Debug Controle Remoto</div>
+          <div className="text-white/70 mb-3 text-[10px]">Aperte o botão do controle Bluetooth agora e veja o que aparece abaixo:</div>
+          {lastEvent ? (
+            <div className="bg-white/5 p-3 rounded-xl border border-white/10 space-y-1">
+              <div><span className="text-white/40">key:</span> <span className="text-[var(--neon-green)] font-bold">{lastEvent.key}</span></div>
+              <div><span className="text-white/40">code:</span> <span className="text-[var(--neon-green)] font-bold">{lastEvent.code}</span></div>
+              <div><span className="text-white/40">keyCode:</span> <span className="text-[var(--neon-green)] font-bold">{lastEvent.keyCode}</span></div>
+              <div><span className="text-white/40">type:</span> <span className="text-[var(--neon-green)] font-bold">{lastEvent.type}</span></div>
+            </div>
+          ) : (
+            <div className="text-white/30 italic text-center py-3 bg-white/5 rounded-xl border border-white/10">
+              Nenhum evento capturado ainda...
+            </div>
+          )}
+          <button onClick={() => setDebugMode(false)} className="mt-3 w-full bg-white/10 border border-white/20 rounded-xl py-2 text-white/70 text-[10px] font-bold uppercase tracking-widest">
+            Fechar Debug
+          </button>
+        </div>
+      )}
 
       {h.matchWinner && (
         <div className="absolute inset-0 bg-black/80 z-50 flex flex-col items-center justify-center backdrop-blur-sm p-4 text-center">
@@ -109,11 +132,17 @@ export function GameScreen({ h }) {
 
       <main className="flex-1 w-full max-w-sm px-4 flex flex-col justify-center gap-10 relative z-10 h-full">
         
-        {/* Bluetooth Remote Indicator */}
-        <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10" title="Controle Bluetooth Ativo">
+        {/* Bluetooth Remote Indicator (tap to open debug) */}
+        <button 
+          onClick={() => setDebugMode(true)}
+          className="absolute top-4 right-4 flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 z-20" 
+          title="Controle Bluetooth — Toque para diagnóstico"
+        >
           <span className="material-symbols-outlined text-[14px] text-[var(--neon-blue)] animate-pulse">bluetooth</span>
-          <span className="text-[9px] uppercase font-bold tracking-widest text-white/50">ON</span>
-        </div>
+          <span className="text-[9px] uppercase font-bold tracking-widest text-white/50">
+            {lastEvent ? '🟢' : 'ON'}
+          </span>
+        </button>
 
         {/* Team 1 (Blue) */}
         <section className="flex flex-col items-center gap-6 relative group">
