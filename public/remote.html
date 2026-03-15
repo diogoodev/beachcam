@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=200, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BeachCam Remote</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, 'Helvetica Neue', sans-serif;
+      background: #000;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* ── Connect Screen ── */
+    #connect-screen { width: 100%; text-align: center; }
+    #connect-screen h1 { font-size: 14px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; color: #00F5FF; }
+    #code-input {
+      width: 100%;
+      text-align: center;
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 8px;
+      padding: 12px;
+      background: #111;
+      border: 2px solid #333;
+      border-radius: 12px;
+      color: #fff;
+      outline: none;
+      margin-bottom: 10px;
+    }
+    #code-input:focus { border-color: #00F5FF; box-shadow: 0 0 15px rgba(0,245,255,0.3); }
+    #connect-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      border: none;
+      border-radius: 12px;
+      background: #00F5FF;
+      color: #000;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    #connect-btn:active { transform: scale(0.95); }
+    #connect-btn:disabled { opacity: 0.3; }
+
+    /* ── Control Screen ── */
+    #control-screen { display: none; width: 100%; flex: 1; flex-direction: column; gap: 6px; }
+    .ctrl-btn {
+      flex: 1;
+      width: 100%;
+      border: none;
+      border-radius: 16px;
+      font-size: 20px;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.1s, filter 0.1s;
+      min-height: 60px;
+    }
+    .ctrl-btn:active { transform: scale(0.93); filter: brightness(1.3); }
+    #btn-a { background: #0066FF; color: #fff; box-shadow: 0 4px 20px rgba(0,102,255,0.4); }
+    #btn-b { background: #C6FF00; color: #000; box-shadow: 0 4px 20px rgba(198,255,0,0.4); }
+    #btn-undo { background: #222; color: #ff6b4a; border: 1px solid #333; font-size: 14px; flex: 0.4; min-height: 40px; }
+
+    #status-bar {
+      text-align: center;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: 700;
+      padding: 6px 0;
+      color: #666;
+    }
+    #status-bar.connected { color: #C6FF00; }
+
+    .flash { animation: flash-anim 0.3s ease-out; }
+    @keyframes flash-anim { 0% { filter: brightness(2); } 100% { filter: brightness(1); } }
+  </style>
+</head>
+<body>
+
+  <!-- Connect Screen -->
+  <div id="connect-screen">
+    <h1>🏐 BeachCam</h1>
+    <input id="code-input" type="tel" maxlength="4" placeholder="CODE" inputmode="numeric" autocomplete="off">
+    <button id="connect-btn" onclick="connect()">Conectar</button>
+  </div>
+
+  <!-- Control Screen -->
+  <div id="control-screen">
+    <div id="status-bar">Conectando...</div>
+    <button class="ctrl-btn" id="btn-a" onclick="sendCmd('ADD_POINT_A')">A</button>
+    <button class="ctrl-btn" id="btn-b" onclick="sendCmd('ADD_POINT_B')">B</button>
+    <button class="ctrl-btn" id="btn-undo" onclick="sendCmd('UNDO')">↩ UNDO</button>
+  </div>
+
+<script>
+  // ── Config ──
+  const SUPABASE_URL = 'https://vofbqvfjmnssggnlejhj.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_VVpoPIJbMQwQdnpiU1edvA_9YZrbazp';
+
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  let channel = null;
+
+  // ── Device ID (persisted) ──
+  let deviceId = localStorage.getItem('bc_remote_device');
+  if (!deviceId) {
+    deviceId = 'watch-' + Math.random().toString(36).substring(2, 8);
+    localStorage.setItem('bc_remote_device', deviceId);
+  }
+
+  // ── Connect ──
+  function connect() {
+    const code = document.getElementById('code-input').value.trim();
+    if (code.length !== 4) return;
+
+    document.getElementById('connect-btn').disabled = true;
+
+    channel = sb.channel('remote-control:' + code, {
+      config: { broadcast: { self: false } }
+    });
+
+    channel
+      .on('broadcast', { event: 'pong' }, () => {
+        const bar = document.getElementById('status-bar');
+        bar.textContent = '🟢 Conectado';
+        bar.className = 'connected';
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          // Show control screen
+          document.getElementById('connect-screen').style.display = 'none';
+          const ctrl = document.getElementById('control-screen');
+          ctrl.style.display = 'flex';
+
+          // Ping the main app
+          channel.send({
+            type: 'broadcast',
+            event: 'ping',
+            payload: { device: deviceId }
+          });
+        }
+      });
+  }
+
+  // ── Send Command ──
+  function sendCmd(action) {
+    if (!channel) return;
+
+    channel.send({
+      type: 'broadcast',
+      event: 'command',
+      payload: { action, device: deviceId, ts: Date.now() }
+    });
+
+    // Vibrate feedback
+    if (navigator.vibrate) navigator.vibrate(30);
+
+    // Visual flash
+    const btnMap = { 'ADD_POINT_A': 'btn-a', 'ADD_POINT_B': 'btn-b', 'UNDO': 'btn-undo' };
+    const btn = document.getElementById(btnMap[action]);
+    if (btn) {
+      btn.classList.add('flash');
+      setTimeout(() => btn.classList.remove('flash'), 300);
+    }
+  }
+
+  // ── Enter key on input ──
+  document.getElementById('code-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') connect();
+  });
+
+  // Auto-focus
+  document.getElementById('code-input').focus();
+</script>
+</body>
+</html>

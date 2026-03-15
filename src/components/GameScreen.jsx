@@ -1,32 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { POINT_SEQUENCE, POINT_LABELS } from '../utils/constants';
 import { SubstitutionSheet } from './SubstitutionSheet';
 import { ShareSheet } from './ShareSheet';
-import { useBluetoothRemote } from '../hooks/useBluetoothRemote';
+import { useRemoteControl } from '../hooks/useRemoteControl';
 
 export function GameScreen({ h }) {
   const [showSubstitution, setShowSubstitution] = useState(false);
   const [shareMatchData, setShareMatchData] = useState(null);
+  const [showRemotePanel, setShowRemotePanel] = useState(false);
+  const [remoteEnabled, setRemoteEnabled] = useState(false);
 
-  const { remoteInputProps, lastEvent, debugMode, setDebugMode } = useBluetoothRemote(
-    (clicks) => {
-      if (clicks === 1) h.addPoint("A");
-      else if (clicks === 2) h.addPoint("B");
-      else if (clicks >= 3) h.undoLastPoint();
-    }, 
-    !h.matchWinner // Only active when the game is not finished
-  );
+  // ── Remote Control (Smartwatch / Second device) ──
+  const onPointA = useCallback(() => h.addPoint("A"), [h]);
+  const onPointB = useCallback(() => h.addPoint("B"), [h]);
+  const onUndo = useCallback(() => h.undoLastPoint(), [h]);
+
+  const { sessionCode, remoteConnected, lastRemoteAction } = useRemoteControl({
+    onPointA, onPointB, onUndo,
+    isActive: remoteEnabled && !h.matchWinner,
+  });
+
+  // ── MediaSession API (Bluetooth headphones) ──
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || h.matchWinner) return;
+
+    // Need a silent audio context to enable MediaSession
+    const audio = document.createElement('audio');
+    audio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+    audio.loop = true;
+
+    const tryPlay = () => {
+      audio.play().catch(() => {});
+    };
+    tryPlay();
+    window.addEventListener('click', tryPlay, { once: true });
+    window.addEventListener('touchend', tryPlay, { once: true });
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: 'BeachCam Placar',
+      artist: 'Controle Remoto',
+    });
+
+    navigator.mediaSession.setActionHandler('play', () => h.addPoint("A"));
+    navigator.mediaSession.setActionHandler('pause', () => h.addPoint("B"));
+    navigator.mediaSession.setActionHandler('previoustrack', () => h.undoLastPoint());
+    navigator.mediaSession.setActionHandler('nexttrack', () => h.addPoint("A"));
+
+    return () => {
+      audio.pause();
+      audio.remove();
+      navigator.mediaSession.setActionHandler('play', null);
+      navigator.mediaSession.setActionHandler('pause', null);
+      navigator.mediaSession.setActionHandler('previoustrack', null);
+      navigator.mediaSession.setActionHandler('nexttrack', null);
+    };
+  }, [h, h.matchWinner]);
   
   const currentLabelA   = POINT_LABELS[POINT_SEQUENCE[h.pointIdxA]] ?? "0";
   const currentLabelB   = POINT_LABELS[POINT_SEQUENCE[h.pointIdxB]] ?? "0";
 
-  // Function to split score into two digits (e.g., "15" -> ["1", "5"], "0" -> ["", "0"], "SET" -> ["S", "E"])
+  // Function to split score into two digits
   const getDigits = (score) => {
     if (score === "SET") return ["S", "T"];
     const str = String(score);
     if (str.length === 1) return ["", str];
     if (str.length === 2) return [str[0], str[1]];
-    return [str[0] || "", str[1] || ""]; // Fallback
+    return [str[0] || "", str[1] || ""];
   };
 
   const digitsA = getDigits(currentLabelA);
@@ -42,34 +81,70 @@ export function GameScreen({ h }) {
     return dotsText;
   };
 
+  // Build the remote URL for display
+  const remoteUrl = sessionCode ? `${window.location.origin}/remote.html` : '';
+
   return (
     <div className="text-white flex flex-col items-center justify-center relative min-h-screen pb-32 pt-16">
-      {/* Hidden input to capture Bluetooth Remote KeyEvents on iOS */}
-      <input {...remoteInputProps} />
       
       {/* Background FX */}
       <div className="central-glow"></div>
       <div className="center-separator"></div>
 
-      {/* Bluetooth Remote Debug Overlay */}
-      {debugMode && (
-        <div className="fixed top-20 left-4 right-4 z-[200] bg-black/95 border border-[var(--neon-blue)] rounded-2xl p-4 text-xs font-mono backdrop-blur-xl shadow-[0_0_30px_rgba(0,245,255,0.3)]">
-          <div className="text-[var(--neon-blue)] font-bold uppercase tracking-widest text-[10px] mb-2">🔧 Debug Controle Remoto</div>
-          <div className="text-white/70 mb-3 text-[10px]">Aperte o botão do controle Bluetooth agora e veja o que aparece abaixo:</div>
-          {lastEvent ? (
-            <div className="bg-white/5 p-3 rounded-xl border border-white/10 space-y-1">
-              <div><span className="text-white/40">key:</span> <span className="text-[var(--neon-green)] font-bold">{lastEvent.key}</span></div>
-              <div><span className="text-white/40">code:</span> <span className="text-[var(--neon-green)] font-bold">{lastEvent.code}</span></div>
-              <div><span className="text-white/40">keyCode:</span> <span className="text-[var(--neon-green)] font-bold">{lastEvent.keyCode}</span></div>
-              <div><span className="text-white/40">type:</span> <span className="text-[var(--neon-green)] font-bold">{lastEvent.type}</span></div>
+      {/* Remote Control Panel */}
+      {showRemotePanel && (
+        <div className="fixed top-20 left-4 right-4 z-[200] bg-black/95 border border-[var(--neon-blue)] rounded-2xl p-4 backdrop-blur-xl shadow-[0_0_30px_rgba(0,245,255,0.3)]">
+          <div className="text-[var(--neon-blue)] font-bold uppercase tracking-widest text-[10px] mb-3">⌚ Controle Remoto</div>
+          
+          {!remoteEnabled ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-white/60 text-[11px]">Ative para controlar o placar de outro dispositivo (smartwatch, celular ou smartband).</p>
+              <button 
+                onClick={() => setRemoteEnabled(true)}
+                className="w-full bg-[var(--neon-blue)] text-black px-4 py-3 rounded-xl font-black uppercase text-xs tracking-wider active:scale-95 transition-all"
+              >
+                Ativar Controle Remoto
+              </button>
             </div>
           ) : (
-            <div className="text-white/30 italic text-center py-3 bg-white/5 rounded-xl border border-white/10">
-              Nenhum evento capturado ainda...
+            <div className="flex flex-col gap-3">
+              {/* Session Code */}
+              <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-center">
+                <div className="text-white/40 text-[9px] uppercase tracking-widest mb-2">Código da Sessão</div>
+                <div className="text-4xl font-black tracking-[12px] text-[var(--neon-green)] pl-3">{sessionCode}</div>
+              </div>
+
+              {/* Instructions */}
+              <div className="text-white/50 text-[10px] space-y-1">
+                <p>1. No smartwatch/celular, abra:</p>
+                <div className="bg-white/5 px-3 py-2 rounded-lg text-[var(--neon-blue)] font-mono text-[9px] break-all select-all">{remoteUrl}</div>
+                <p>2. Digite o código <span className="text-[var(--neon-green)] font-bold">{sessionCode}</span></p>
+                <p>3. Toque nos botões A / B para marcar pontos!</p>
+              </div>
+
+              {/* Connection Status */}
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest ${remoteConnected ? 'bg-[var(--neon-green)]/10 text-[var(--neon-green)]' : 'bg-white/5 text-white/30'}`}>
+                <div className={`w-2 h-2 rounded-full ${remoteConnected ? 'bg-[var(--neon-green)] animate-pulse shadow-[0_0_8px_var(--neon-green)]' : 'bg-white/20'}`}></div>
+                {remoteConnected ? 'Dispositivo conectado' : 'Aguardando conexão...'}
+              </div>
+
+              {lastRemoteAction && (
+                <div className="text-[9px] text-white/30 text-center">
+                  Último: {lastRemoteAction.action} de {lastRemoteAction.device}
+                </div>
+              )}
+
+              <button 
+                onClick={() => { setRemoteEnabled(false); }}
+                className="w-full bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider"
+              >
+                Desativar
+              </button>
             </div>
           )}
-          <button onClick={() => setDebugMode(false)} className="mt-3 w-full bg-white/10 border border-white/20 rounded-xl py-2 text-white/70 text-[10px] font-bold uppercase tracking-widest">
-            Fechar Debug
+
+          <button onClick={() => setShowRemotePanel(false)} className="mt-3 w-full bg-white/10 border border-white/20 rounded-xl py-2 text-white/70 text-[10px] font-bold uppercase tracking-widest">
+            Fechar
           </button>
         </div>
       )}
@@ -132,15 +207,17 @@ export function GameScreen({ h }) {
 
       <main className="flex-1 w-full max-w-sm px-4 flex flex-col justify-center gap-10 relative z-10 h-full">
         
-        {/* Bluetooth Remote Indicator (tap to open debug) */}
+        {/* Remote Control Indicator (tap to open panel) */}
         <button 
-          onClick={() => setDebugMode(true)}
-          className="absolute top-4 right-4 flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 z-20" 
-          title="Controle Bluetooth — Toque para diagnóstico"
+          onClick={() => setShowRemotePanel(true)}
+          className={`absolute top-4 right-4 flex items-center gap-1.5 backdrop-blur-md px-2.5 py-1 rounded-full border z-20 ${remoteConnected ? 'bg-[var(--neon-green)]/10 border-[var(--neon-green)]/30' : 'bg-black/40 border-white/10'}`}
+          title="Controle Remoto"
         >
-          <span className="material-symbols-outlined text-[14px] text-[var(--neon-blue)] animate-pulse">bluetooth</span>
-          <span className="text-[9px] uppercase font-bold tracking-widest text-white/50">
-            {lastEvent ? '🟢' : 'ON'}
+          <span className={`material-symbols-outlined text-[14px] ${remoteConnected ? 'text-[var(--neon-green)]' : 'text-[var(--neon-blue)]'} ${remoteEnabled ? 'animate-pulse' : ''}`}>
+            {remoteConnected ? 'watch' : 'settings_remote'}
+          </span>
+          <span className={`text-[9px] uppercase font-bold tracking-widest ${remoteConnected ? 'text-[var(--neon-green)]' : 'text-white/50'}`}>
+            {remoteConnected ? '🟢' : remoteEnabled ? '...' : 'OFF'}
           </span>
         </button>
 
