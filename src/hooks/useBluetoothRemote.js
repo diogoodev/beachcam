@@ -8,12 +8,14 @@ export function useBluetoothRemote(onAction, isActive = true) {
     if (!isActive) return;
 
     const handleKeyDown = (e) => {
-      // Common keys emitted by cheap bluetooth selfie remotes:
-      // VolumeUp, VolumeDown, Enter, Space, ArrowUp, ArrowDown
-      const validKeys = ['Enter', 'VolumeUp', 'VolumeDown', ' ', 'ArrowUp', 'ArrowDown'];
-      
+      const validKeys = [
+        'Enter', ' ', 'ArrowUp', 'ArrowDown',
+        'VolumeUp', 'VolumeDown',
+        'AudioVolumeUp', 'AudioVolumeDown',
+        'MediaTrackNext', 'MediaTrackPrevious', 'MediaPlayPause'
+      ];
       if (validKeys.includes(e.key)) {
-        // Prevent default actions like scrolling the page
+        // Prevent default actions like scrolling the page or OS volume change
         e.preventDefault();
         
         clickCount.current += 1;
@@ -35,10 +37,26 @@ export function useBluetoothRemote(onAction, isActive = true) {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    const preventVol = (e) => {
+      const validKeys = [
+        'Enter', ' ', 'ArrowUp', 'ArrowDown',
+        'VolumeUp', 'VolumeDown',
+        'AudioVolumeUp', 'AudioVolumeDown',
+        'MediaTrackNext', 'MediaTrackPrevious', 'MediaPlayPause'
+      ];
+      if (validKeys.includes(e.key)) {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, { passive: false });
+    window.addEventListener('keyup', preventVol, { passive: false });
+    window.addEventListener('keypress', preventVol, { passive: false });
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', preventVol);
+      window.removeEventListener('keypress', preventVol);
       if (clickTimer.current) clearTimeout(clickTimer.current);
     };
   }, [onAction, isActive]);
