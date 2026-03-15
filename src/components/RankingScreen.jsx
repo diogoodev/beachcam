@@ -152,9 +152,9 @@ export function RankingScreen({ h }) {
       {/* Header */}
       <header className="mb-6 flex flex-col items-center gap-2 relative">
         <div className="absolute top-0 right-0 flex gap-2">
-          {tab === 'today' && playersSource.length > 0 && (
+          {playersSource.length > 0 && (
             <button 
-              onClick={() => setShareData({ type: 'ranking', data: sortedPlayers, isDuo: false })}
+              onClick={() => setShareData({ type: 'ranking', data: sortedPlayers, isDuo: false, duoData: duoRankings })}
               className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 border border-white/10 hover:bg-white/10 active:scale-95 transition-all text-[var(--neon-blue)] shadow-[0_0_15px_rgba(0,245,255,0.1)]"
               aria-label="Compartilhar Ranking"
             >
@@ -246,6 +246,7 @@ export function RankingScreen({ h }) {
           type={shareData.type} 
           data={shareData.data} 
           isDuo={shareData.isDuo} 
+          duoData={shareData.duoData || []}
           onClose={() => setShareData(null)} 
         />
       )}
