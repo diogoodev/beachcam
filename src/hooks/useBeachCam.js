@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { flushSync } from "react-dom";
 import { supabase, playersService, rankingService, matchesService, liveMatchService } from "../services/supabase";
 import { POINT_SEQUENCE, POINT_LABELS } from "../utils/constants";
@@ -47,7 +47,6 @@ export function useBeachCam() {
   const [players, setPlayers] = useState([]);
   const [rankingRows, setRankingRows] = useState([]);
   const [matchHistory, setMatchHistory] = useState([]);
-  const [duoStats, setDuoStats] = useState({});
   const [flash, setFlash] = useState(null);
   const [syncStatus, setSyncStatus] = useState("offline");
   
@@ -63,6 +62,48 @@ export function useBeachCam() {
     setTimeout(() => setFlash(null), 700); 
     if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(50);
   };
+
+  const todayMatches = useMemo(() => {
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    return matchHistory.filter(m => m.played_at && m.played_at.startsWith(todayStr));
+  }, [matchHistory]);
+
+  const todayRanking = useMemo(() => {
+    const stats = {};
+    todayMatches.forEach(m => {
+      [m.winner_1, m.winner_2].forEach(p => {
+        if (!p) return;
+        stats[p] = stats[p] || { player_name: p, wins: 0, games: 0 };
+        stats[p].wins += 1;
+        stats[p].games += 1;
+      });
+      [m.loser_1, m.loser_2].forEach(p => {
+        if (!p) return;
+        stats[p] = stats[p] || { player_name: p, wins: 0, games: 0 };
+        stats[p].games += 1;
+      });
+    });
+    return Object.values(stats)
+      .filter(p => p.wins > 0)
+      .sort((a, b) => b.wins - a.wins);
+  }, [todayMatches]);
+
+  const todayDuoRanking = useMemo(() => {
+    const stats = {};
+    todayMatches.forEach(m => {
+      const duo = [m.winner_1, m.winner_2].sort().join(" / ");
+      const loserDuo = [m.loser_1, m.loser_2].sort().join(" / ");
+      stats[duo] = stats[duo] ?? { name: duo, players: [m.winner_1, m.winner_2].sort(), wins: 0, games: 0 };
+      stats[loserDuo] = stats[loserDuo] ?? { name: loserDuo, players: [m.loser_1, m.loser_2].sort(), wins: 0, games: 0 };
+      stats[duo].wins += 1;
+      stats[duo].games += 1;
+      stats[loserDuo].games += 1;
+    });
+    return Object.values(stats)
+      .filter(d => d.wins > 0)
+      .sort((a,b) => b.wins - a.wins);
+  }, [todayMatches]);
 
   const applyRemoteState = useCallback((st) => {
     if (st.screen) setScreen(st.screen);
@@ -184,15 +225,6 @@ export function useBeachCam() {
     try {
       const data = await matchesService.fetchRecent();
       setMatchHistory(data);
-      const ds = {};
-      data.forEach(m => {
-        const wk = [m.winner_1, m.winner_2].sort().join("|");
-        const lk = [m.loser_1,  m.loser_2 ].sort().join("|");
-        ds[wk] = ds[wk] ?? { wins:0, games:0 };
-        ds[lk] = ds[lk] ?? { wins:0, games:0 };
-        ds[wk].wins++; ds[wk].games++; ds[lk].games++;
-      });
-      setDuoStats(ds);
     } catch (err) {
       console.error("Failed to load matches", err);
     }
@@ -395,10 +427,11 @@ export function useBeachCam() {
 
   const removePoint = useCallback((team) => {
     if (matchWinner) return;
-    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(30);
     let nA = pointIdxA, nB = pointIdxB;
     if (team === "A" && pointIdxA > 0) { nA = pointIdxA - 1; setPointIdxA(nA); }
     if (team === "B" && pointIdxB > 0) { nB = pointIdxB - 1; setPointIdxB(nB); }
+    if (nA === pointIdxA && nB === pointIdxB) return; // nothing changed
+    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(30);
     syncState({ pointIdxA: nA, pointIdxB: nB });
   }, [matchWinner, pointIdxA, pointIdxB, syncState, setPointIdxA, setPointIdxB]);
 
@@ -528,13 +561,14 @@ export function useBeachCam() {
     addPoint, removePoint,
     bestOf, setBestOf, setsToWin,
     matchWinner, setMatchWinner,
-    rankingRows, matchHistory, duoStats, resetRanking,
+    rankingRows, matchHistory, resetRanking,
     gamesPlayed, benchSince,
     flash, gameLog, matchSetHistory,
     syncStatus,
     activeLiveMatch, joinLiveMatch,
     startGame, doRotation, resetMatch, triggerFlash,
     endSession, promotePlayersToNext, removePlayerFromBench, reorderBench,
-    revertSet, substitutePlayer
+    revertSet, substitutePlayer,
+    todayMatches, todayRanking, todayDuoRanking
   };
 }

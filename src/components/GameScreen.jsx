@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { POINT_SEQUENCE, POINT_LABELS } from '../utils/constants';
 import { SubstitutionSheet } from './SubstitutionSheet';
+import { ShareSheet } from './ShareSheet';
 
 export function GameScreen({ h }) {
   const [showSubstitution, setShowSubstitution] = useState(false);
+  const [shareMatchData, setShareMatchData] = useState(null);
+  
   const currentLabelA   = POINT_LABELS[POINT_SEQUENCE[h.pointIdxA]] ?? "0";
   const currentLabelB   = POINT_LABELS[POINT_SEQUENCE[h.pointIdxB]] ?? "0";
 
@@ -49,18 +52,35 @@ export function GameScreen({ h }) {
           <div className="flex flex-col gap-3 w-full max-w-sm mt-2">
             <div className="flex gap-4">
               <button 
+                className="btn-shimmer flex-[1.5] bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl py-4 font-bold uppercase transition-colors text-sm md:text-base flex items-center justify-center gap-2"
+                onClick={() => {
+                  const matchData = {
+                    winner_1: h.matchWinner === "A" ? h.teamA[0] : h.teamB[0],
+                    winner_2: h.matchWinner === "A" ? h.teamA[1] : h.teamB[1],
+                    loser_1: h.matchWinner === "A" ? h.teamB[0] : h.teamA[0],
+                    loser_2: h.matchWinner === "A" ? h.teamB[1] : h.teamA[1],
+                    sets_winner: h.matchWinner === "A" ? h.setsA : h.setsB,
+                    sets_loser: h.matchWinner === "A" ? h.setsB : h.setsA
+                  };
+                  setShareMatchData(matchData);
+                }}
+              >
+                <span className="material-symbols-outlined text-[18px]">share</span>
+                Share
+              </button>
+              <button 
                 className="btn-shimmer flex-1 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl py-4 font-bold uppercase transition-colors text-sm md:text-base"
                 onClick={() => h.resetMatch()}
               >
                 Revanche
               </button>
-              <button 
-                className="btn-shimmer flex-1 bg-[var(--neon-blue)] text-black rounded-xl py-4 font-black uppercase shadow-[0_0_20px_rgba(0,245,255,0.4)] active:scale-95 transition-all text-sm md:text-base"
-                onClick={() => h.doRotation(h.matchWinner)}
-              >
-                🔄 Próxima Dupla
-              </button>
             </div>
+            <button 
+              className="btn-shimmer w-full bg-[var(--neon-blue)] text-black rounded-xl py-4 font-black uppercase shadow-[0_0_20px_rgba(0,245,255,0.4)] active:scale-95 transition-all text-sm md:text-base"
+              onClick={() => h.doRotation(h.matchWinner)}
+            >
+              🔄 Próxima Dupla
+            </button>
             <button 
               className="btn-shimmer w-full bg-red-600/80 hover:bg-red-600 text-white rounded-xl py-3 font-bold uppercase border border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.3)] active:scale-95 transition-all text-xs md:text-sm tracking-widest mt-1"
               onClick={() => {
@@ -248,6 +268,15 @@ export function GameScreen({ h }) {
       
       {showSubstitution && (
         <SubstitutionSheet h={h} onClose={() => setShowSubstitution(false)} />
+      )}
+      
+      {shareMatchData && (
+        <ShareSheet 
+          type="match" 
+          data={shareMatchData} 
+          isDuo={false} 
+          onClose={() => setShareMatchData(null)} 
+        />
       )}
     </div>
   );
