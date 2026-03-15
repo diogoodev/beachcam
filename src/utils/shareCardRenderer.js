@@ -214,7 +214,7 @@ export async function renderRankingCard(players, isDuo = false, format = 'story'
 export async function renderMatchResultCard(match, format = 'story') {
   await waitForFonts();
   return new Promise((resolve) => {
-    const w = format === 'story' ? 1080 : 1080;
+    const w = 1080;
     const h = format === 'story' ? 1920 : 1080;
     const { canvas, ctx } = createBaseCanvas(w, h);
 
