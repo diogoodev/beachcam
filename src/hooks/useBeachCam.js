@@ -107,9 +107,9 @@ export function useBeachCam() {
 
   const applyRemoteState = useCallback((st) => {
     if (st.screen) setScreen(st.screen);
-    if (st.teamA) setTeamA(st.teamA);
-    if (st.teamB) setTeamB(st.teamB);
-    if (st.bench) setBench(st.bench);
+    if (st.teamA !== undefined) setTeamA(st.teamA);
+    if (st.teamB !== undefined) setTeamB(st.teamB);
+    if (st.bench !== undefined) setBench(st.bench);
     if (st.pointIdxA !== undefined) setPointIdxA(st.pointIdxA);
     if (st.pointIdxB !== undefined) setPointIdxB(st.pointIdxB);
     if (st.setsA !== undefined) setSetsA(st.setsA);
@@ -320,7 +320,7 @@ export function useBeachCam() {
   const resetRanking = async () => {
     try {
       await rankingService.reset();
-      setRankingRows([]); setMatchHistory([]); setDuoStats({});
+      setRankingRows([]); setMatchHistory([]);
       setSyncStatus("synced");
     } catch (err) {
       console.error("Failed to reset ranking", err);
