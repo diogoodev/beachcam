@@ -1,583 +1,160 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { flushSync } from "react-dom";
-import { supabase, playersService, rankingService, matchesService, liveMatchService } from "../services/supabase";
-import { POINT_SEQUENCE, POINT_LABELS } from "../utils/constants";
-import { formatTime, pickNextFour, updateStats } from "../utils/gameLogic";
+import { liveMatchService } from "../services/supabase";
+import { useMatchScoring } from "./useMatchScoring";
+import { useRotation } from "./useRotation";
+import { useSupabaseSync } from "./useSupabaseSync";
 
-function useLocalState(key, initialValue) {
-  const [state, setState] = useState(() => {
-    try {
-      const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
-    } catch (error) {
-      console.error("Error reading localStorage", error);
-      return initialValue;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(key, JSON.stringify(state));
-    } catch (error) {
-      console.error("Error setting localStorage", error);
-    }
-  }, [key, state]);
-
-  return [state, setState];
-}
-
+/**
+ * useBeachCam — thin orchestrator that composes the 3 sub-hooks
+ * and returns the same public API as the original monolithic hook.
+ */
 export function useBeachCam() {
-  const [screen, setScreen] = useLocalState("bc_screen", "setup");
-  const [teamA, setTeamA] = useLocalState("bc_teamA", []);
-  const [teamB, setTeamB] = useLocalState("bc_teamB", []);
-  const [bench, setBench] = useLocalState("bc_bench", []);
-  const [gamesPlayed, setGamesPlayed] = useLocalState("bc_gamesPlayed", {});
-  const [benchSince, setBenchSince] = useLocalState("bc_benchSince", {});
-  const [pointIdxA, setPointIdxA] = useLocalState("bc_pointIdxA", 0);
-  const [pointIdxB, setPointIdxB] = useLocalState("bc_pointIdxB", 0);
-  const [setsA, setSetsA] = useLocalState("bc_setsA", 0);
-  const [setsB, setSetsB] = useLocalState("bc_setsB", 0);
-  const [bestOf, setBestOf] = useLocalState("bc_bestOf", 3);
-  const [matchWinner, setMatchWinner] = useLocalState("bc_matchWinner", null);
-  const [matchSaved, setMatchSaved] = useLocalState("bc_matchSaved", false);
-  const [localTimestamp, setLocalTimestamp] = useLocalState("bc_localTimestamp", 0);
-  const [gameLog, setGameLog] = useLocalState("bc_gameLog", []);
-  const [matchSetHistory, setMatchSetHistory] = useLocalState("bc_setHistory", []);
+  // Ref-based sync callback — lets sub-hooks call sync without circular deps
+  const onSyncRef = useRef(null);
 
-  const [players, setPlayers] = useState([]);
-  const [rankingRows, setRankingRows] = useState([]);
-  const [matchHistory, setMatchHistory] = useState([]);
-  const [flash, setFlash] = useState(null);
-  const [syncStatus, setSyncStatus] = useState("offline");
-  
-  const [activeLiveMatch, setActiveLiveMatch] = useState(null);
+  // ── Sub-hooks ──
+  const sync = useSupabaseSync();
+  const scoring = useMatchScoring(onSyncRef);
+  const rotation = useRotation(
+    onSyncRef,
+    () => scoring.resetMatch(false), // resetScoringFn (no sync — orchestrator handles it)
+    sync.players,
+    scoring.bestOf
+  );
 
-  // Single ref for the remote update handler (used in Supabase subscription)
-  const handleRemoteUpdateRef = useRef(null);
-
-  const setsToWin = Math.ceil(bestOf / 2);
-
-  const triggerFlash = (val) => { 
-    setFlash(val); 
-    setTimeout(() => setFlash(null), 700); 
-    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(50);
-  };
-
-  const todayMatches = useMemo(() => {
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-    return matchHistory.filter(m => m.played_at && m.played_at.startsWith(todayStr));
-  }, [matchHistory]);
-
-  const todayRanking = useMemo(() => {
-    const stats = {};
-    todayMatches.forEach(m => {
-      [m.winner_1, m.winner_2].forEach(p => {
-        if (!p) return;
-        stats[p] = stats[p] || { player_name: p, wins: 0, games: 0 };
-        stats[p].wins += 1;
-        stats[p].games += 1;
-      });
-      [m.loser_1, m.loser_2].forEach(p => {
-        if (!p) return;
-        stats[p] = stats[p] || { player_name: p, wins: 0, games: 0 };
-        stats[p].games += 1;
-      });
-    });
-    return Object.values(stats)
-      .filter(p => p.wins > 0)
-      .sort((a, b) => b.wins - a.wins);
-  }, [todayMatches]);
-
-  const calculateDuoRanking = useCallback((matches) => {
-    const stats = {};
-    matches.forEach(m => {
-      const duo = [m.winner_1, m.winner_2].sort().join(" / ");
-      const loserDuo = [m.loser_1, m.loser_2].sort().join(" / ");
-      stats[duo] = stats[duo] ?? { name: duo, players: [m.winner_1, m.winner_2].sort(), wins: 0, games: 0 };
-      stats[loserDuo] = stats[loserDuo] ?? { name: loserDuo, players: [m.loser_1, m.loser_2].sort(), wins: 0, games: 0 };
-      stats[duo].wins += 1;
-      stats[duo].games += 1;
-      stats[loserDuo].games += 1;
-    });
-    return Object.values(stats)
-      .filter(d => d.wins > 0)
-      .sort((a,b) => b.wins - a.wins);
-  }, []);
-
-  const todayDuoRanking = useMemo(() => calculateDuoRanking(todayMatches), [todayMatches, calculateDuoRanking]);
-
-  const sortedBench = useMemo(() => {
-    return [...bench].sort((a,b) => {
-      const d = (benchSince[b]??0) - (benchSince[a]??0);
-      return d !== 0 ? d : (gamesPlayed[a]??0) - (gamesPlayed[b]??0);
-    });
-  }, [bench, benchSince, gamesPlayed]);
-
-  const applyRemoteState = useCallback((st) => {
-    if (st.screen) setScreen(st.screen);
-    if (st.teamA !== undefined) setTeamA(st.teamA);
-    if (st.teamB !== undefined) setTeamB(st.teamB);
-    if (st.bench !== undefined) setBench(st.bench);
-    if (st.pointIdxA !== undefined) setPointIdxA(st.pointIdxA);
-    if (st.pointIdxB !== undefined) setPointIdxB(st.pointIdxB);
-    if (st.setsA !== undefined) setSetsA(st.setsA);
-    if (st.setsB !== undefined) setSetsB(st.setsB);
-    if (st.bestOf !== undefined) setBestOf(st.bestOf);
-    if (st.matchWinner !== undefined) setMatchWinner(st.matchWinner);
-    if (st.gamesPlayed) setGamesPlayed(st.gamesPlayed);
-    if (st.benchSince) setBenchSince(st.benchSince);
-  }, [setScreen, setTeamA, setTeamB, setBench, setPointIdxA, setPointIdxB, setSetsA, setSetsB, setBestOf, setMatchWinner, setGamesPlayed, setBenchSince]);
-
-  // Sync state — reads from state directly (no refs needed).
-  // Changed values are always passed via overrides by callers.
-  const syncState = useCallback((overrides = {}) => {
-    const now = Date.now();
-    setLocalTimestamp(now);
+  // ── Wire the sync callback ──
+  // This builds the full state and calls syncState on the sync hook
+  onSyncRef.current = useCallback((overrides = {}) => {
     const st = {
-      screen: (teamA && teamA.length > 0) ? "game" : "setup",
-      teamA, teamB, bench,
-      pointIdxA, pointIdxB, setsA, setsB,
-      matchWinner, bestOf,
-      gamesPlayed, benchSince,
-      localTimestamp: now,
+      screen: (rotation.teamA && rotation.teamA.length > 0) ? "game" : "setup",
+      teamA: rotation.teamA, teamB: rotation.teamB, bench: rotation.bench,
+      pointIdxA: scoring.pointIdxA, pointIdxB: scoring.pointIdxB,
+      setsA: scoring.setsA, setsB: scoring.setsB,
+      matchWinner: scoring.matchWinner, bestOf: scoring.bestOf,
+      gamesPlayed: rotation.gamesPlayed, benchSince: rotation.benchSince,
       ...overrides
     };
-    setActiveLiveMatch(st);
-    liveMatchService.sync(st);
-  }, [teamA, teamB, bench, pointIdxA, pointIdxB, setsA, setsB, matchWinner, bestOf, gamesPlayed, benchSince, setLocalTimestamp]);
+    sync.syncState(st);
+  }, [rotation.teamA, rotation.teamB, rotation.bench, scoring.pointIdxA, scoring.pointIdxB, scoring.setsA, scoring.setsB, scoring.matchWinner, scoring.bestOf, rotation.gamesPlayed, rotation.benchSince, sync.syncState]);
 
-  // Save match — uses rankingRows directly (no ref needed), parallelized with Promise.all
-  const saveMatch = useCallback(async (winner, tA, tB, sa, sb) => {
-    setSyncStatus("syncing");
-    try {
-      const winTeam  = winner === "A" ? tA : tB;
-      const loseTeam = winner === "A" ? tB : tA;
-      const sW = winner === "A" ? sa : sb;
-      const sL = winner === "A" ? sb : sa;
-      await matchesService.save(winner, winTeam, loseTeam, sW, sL);
-      
-      await Promise.all([
-        ...winTeam.map(p => {
-          const existing = rankingRows.find(r => r.player_name === p);
-          return rankingService.upsert(p, (existing?.wins ?? 0) + 1, (existing?.games ?? 0) + 1);
-        }),
-        ...loseTeam.map(p => {
-          const existing = rankingRows.find(r => r.player_name === p);
-          return rankingService.upsert(p, existing?.wins ?? 0, (existing?.games ?? 0) + 1);
-        })
-      ]);
-      setSyncStatus("synced");
-    } catch (err) {
-      console.error("Failed to save match", err);
-      setSyncStatus("error");
-    }
-  }, [rankingRows]);
+  // ── Handle remote updates ──
+  const applyRemoteState = useCallback((st) => {
+    if (st.screen) rotation._setters.setScreen(st.screen);
+    if (st.teamA !== undefined) rotation._setters.setTeamA(st.teamA);
+    if (st.teamB !== undefined) rotation._setters.setTeamB(st.teamB);
+    if (st.bench !== undefined) rotation._setters.setBench(st.bench);
+    if (st.pointIdxA !== undefined) scoring._setters.setPointIdxA(st.pointIdxA);
+    if (st.pointIdxB !== undefined) scoring._setters.setPointIdxB(st.pointIdxB);
+    if (st.setsA !== undefined) scoring._setters.setSetsA(st.setsA);
+    if (st.setsB !== undefined) scoring._setters.setSetsB(st.setsB);
+    if (st.bestOf !== undefined) scoring._setters.setBestOf(st.bestOf);
+    if (st.matchWinner !== undefined) scoring._setters.setMatchWinner(st.matchWinner);
+    if (st.gamesPlayed) rotation._setters.setGamesPlayed(st.gamesPlayed);
+    if (st.benchSince) rotation._setters.setBenchSince(st.benchSince);
+  }, [rotation._setters, scoring._setters]);
 
   const handleRemoteUpdate = useCallback((st) => {
     if (!st) return;
-    setActiveLiveMatch(st);
+    sync.setActiveLiveMatch(st);
 
-    if (st.updated_at && localTimestamp > 0) {
+    if (st.updated_at && sync.localTimestamp > 0) {
       const remoteTime = new Date(st.updated_at).getTime();
-      if (localTimestamp > remoteTime) {
-        syncState();
+      if (sync.localTimestamp > remoteTime) {
+        onSyncRef.current?.();
         return;
       }
     }
 
-    if (screen === "game") {
+    if (rotation.screen === "game") {
       applyRemoteState(st);
     }
-  }, [applyRemoteState, syncState, localTimestamp, screen]);
+  }, [applyRemoteState, sync.localTimestamp, rotation.screen, sync.setActiveLiveMatch]);
 
   // Keep the ref always pointing to the latest handleRemoteUpdate
   useEffect(() => {
-    handleRemoteUpdateRef.current = handleRemoteUpdate;
+    sync.handleRemoteUpdateRef.current = handleRemoteUpdate;
   });
 
   const joinLiveMatch = useCallback(() => {
-    if (activeLiveMatch) {
-      applyRemoteState(activeLiveMatch);
-      setScreen("game");
+    if (sync.activeLiveMatch) {
+      applyRemoteState(sync.activeLiveMatch);
+      rotation._setters.setScreen("game");
     }
-  }, [activeLiveMatch, applyRemoteState, setScreen]);
+  }, [sync.activeLiveMatch, applyRemoteState, rotation._setters]);
 
+  // ── Auto-save match when winner is determined ──
   useEffect(() => {
-    if (matchWinner && !matchSaved) {
-      setMatchSaved(true);
-      saveMatch(matchWinner, teamA, teamB, setsA, setsB);
+    if (scoring.matchWinner && !scoring.matchSaved) {
+      scoring._setters.setMatchSaved(true);
+      sync.saveMatch(scoring.matchWinner, rotation.teamA, rotation.teamB, scoring.setsA, scoring.setsB);
     }
-  }, [matchWinner, matchSaved, setsA, setsB, saveMatch, setMatchSaved, teamA, teamB]);
+  }, [scoring.matchWinner, scoring.matchSaved, scoring.setsA, scoring.setsB, sync.saveMatch, scoring._setters, rotation.teamA, rotation.teamB]);
 
-  const loadPlayers = useCallback(async () => {
-    try {
-      const names = await playersService.fetchAll();
-      setPlayers(names);
-      setSyncStatus("synced");
-    } catch (err) {
-      console.error("Failed to load players", err);
-      setSyncStatus("error");
-    }
-  }, []);
-
-  const loadRanking = useCallback(async () => {
-    try {
-      const data = await rankingService.fetchAll();
-      setRankingRows(data);
-    } catch (err) {
-      console.error("Failed to load ranking", err);
-    }
-  }, []);
-
-  const loadMatches = useCallback(async () => {
-    try {
-      const data = await matchesService.fetchRecent();
-      setMatchHistory(data);
-    } catch (err) {
-      console.error("Failed to load matches", err);
-    }
-  }, []);
-
-  const addPlayer = async (name) => {
-    if (name && !players.includes(name)) {
-      try {
-        setPlayers(p => [...p, name]);
-        await playersService.add(name);
-      } catch (e) {
-        console.error("Failed to add player", e);
-        setPlayers(pl => pl.filter(x => x !== name));
-      }
-    }
-  };
-
-  const removePlayer = async (name) => {
-    const backup = [...players];
-    try {
-      setPlayers(pl => pl.filter(x => x !== name));
-      await playersService.remove(name);
-    } catch (e) {
-      console.error("Failed to remove player", e);
-      setPlayers(backup);
-    }
-  };
-
+  // ── Add player mid-game (bridges sync + rotation) ──
   const addPlayerMidGame = async (name) => {
     const trimmed = name.trim();
-    if (!trimmed || players.includes(trimmed)) return;
+    if (!trimmed || sync.players.includes(trimmed)) return;
 
-    try {
-      setPlayers(p => [...p, trimmed]);
-      await playersService.add(trimmed);
+    const success = await sync.addPlayerToList(trimmed);
+    if (!success) return;
 
-      const newBench = [...bench, trimmed];
-      const newGP = { ...gamesPlayed, [trimmed]: 0 };
-      const newBS = { ...benchSince, [trimmed]: 1 };
-
-      // flushSync garante que o estado é commitado antes de sincronizar
-      flushSync(() => {
-        setGamesPlayed(newGP);
-        setBenchSince(newBS);
-        setBench(newBench);
-      });
-
-      syncState({
-        bench: newBench,
-        gamesPlayed: newGP,
-        benchSince: newBS
-      });
-    } catch (e) {
-      console.error("Failed to add player mid-game", e);
-      setPlayers(pl => pl.filter(x => x !== trimmed));
-    }
-  };
-
-  const removePlayerFromBench = (name) => {
-    const newBench = bench.filter(p => p !== name);
-    const newGP = { ...gamesPlayed };
-    const newBS = { ...benchSince };
-    delete newGP[name];
-    delete newBS[name];
+    const newBench = [...rotation.bench, trimmed];
+    const newGP = { ...rotation.gamesPlayed, [trimmed]: 0 };
+    const newBS = { ...rotation.benchSince, [trimmed]: 1 };
 
     flushSync(() => {
-      setBench(newBench);
-      setGamesPlayed(newGP);
-      setBenchSince(newBS);
+      rotation._setters.setGamesPlayed(newGP);
+      rotation._setters.setBenchSince(newBS);
+      rotation._setters.setBench(newBench);
     });
 
-    syncState({
+    onSyncRef.current?.({
       bench: newBench,
       gamesPlayed: newGP,
       benchSince: newBS
     });
   };
 
-  const reorderBench = (newOrder) => {
-    // benchSince sort is descending (higher = first), so assign descending values
-    const newBS = { ...benchSince };
-    newOrder.forEach((p, i) => {
-      newBS[p] = newOrder.length - i;
-    });
-
-    flushSync(() => {
-      setBenchSince(newBS);
-    });
-
-    syncState({ benchSince: newBS });
-  };
-
-  const resetRanking = async () => {
-    try {
-      await rankingService.reset();
-      setRankingRows([]); setMatchHistory([]);
-      setSyncStatus("synced");
-    } catch (err) {
-      console.error("Failed to reset ranking", err);
-      setSyncStatus("error");
-    }
-  };
-
-  const endSession = useCallback(() => {
-    const resetState = {
-      screen: "setup",
-      teamA: [], teamB: [], bench: [],
-      gamesPlayed: {}, benchSince: {},
-      pointIdxA: 0, pointIdxB: 0, setsA: 0, setsB: 0,
-      matchWinner: null
-    };
-
-    // flushSync garante que o estado local é commitado antes de notificar outros clientes
-    flushSync(() => {
-      setScreen("setup");
-      setTeamA([]);
-      setTeamB([]);
-      setBench([]);
-      setGamesPlayed({});
-      setBenchSince({});
-      setPointIdxA(0);
-      setPointIdxB(0);
-      setSetsA(0);
-      setSetsB(0);
-      setMatchWinner(null);
-      setMatchSetHistory([]);
-      setGameLog([]);
-      setMatchSaved(false);
-    });
-
-    syncState(resetState);
-  }, [syncState, setScreen, setTeamA, setTeamB, setBench, setGamesPlayed, setBenchSince, setPointIdxA, setPointIdxB, setSetsA, setSetsB, setMatchWinner, setMatchSetHistory, setGameLog, setMatchSaved]);
-
-  const promotePlayersToNext = (playerNames) => {
-    if (!playerNames || playerNames.length === 0) return;
-    
-    let currentMaxSince = 0;
-    Object.values(benchSince).forEach(val => {
-      if (val > currentMaxSince) currentMaxSince = val;
-    });
-
-    const overrides = {};
-    playerNames.forEach((p, idx) => {
-      overrides[p] = currentMaxSince + 10 + (playerNames.length - idx); 
-    });
-
-    const newBS = { ...benchSince, ...overrides };
-    setBenchSince(newBS);
-    syncState({ benchSince: newBS });
-  };
-
-  const resetMatch = useCallback((sync = true) => {
-    setPointIdxA(0); setPointIdxB(0); setSetsA(0); setSetsB(0);
-    setMatchWinner(null); setMatchSetHistory([]); setGameLog([]); setMatchSaved(false);
-    if (sync) {
-      syncState({ pointIdxA:0, pointIdxB:0, setsA:0, setsB:0, matchWinner:null });
-    }
-  }, [syncState, setPointIdxA, setPointIdxB, setSetsA, setSetsB, setMatchWinner, setMatchSetHistory, setGameLog, setMatchSaved]);
-
-  const lastPointTime = useRef(0);
-
-  const addPoint = useCallback((team) => {
-    if (matchWinner) return;
-    const now = Date.now();
-    if (now - lastPointTime.current < 400) return;
-    lastPointTime.current = now;
-    
-    triggerFlash(team);
-    const nextIdxA = team === "A" ? pointIdxA + 1 : pointIdxA;
-    const nextIdxB = team === "B" ? pointIdxB + 1 : pointIdxB;
-    const pA = POINT_SEQUENCE[nextIdxA], pB = POINT_SEQUENCE[nextIdxB];
-
-    if (pA === "SET" || pB === "SET") {
-      const sw = pA === "SET" ? "A" : "B";
-      const newSA = sw === "A" ? setsA + 1 : setsA;
-      const newSB = sw === "B" ? setsB + 1 : setsB;
-      setMatchSetHistory(prev => [...prev, {
-        setNum: prev.length+1, winner: sw,
-        labelA: pA === "SET" ? "SET" : POINT_LABELS[POINT_SEQUENCE[pointIdxA]],
-        labelB: pB === "SET" ? "SET" : POINT_LABELS[POINT_SEQUENCE[pointIdxB]],
-        pointIdxA: pointIdxA,
-        pointIdxB: pointIdxB
-      }]);
-      setSetsA(newSA); setSetsB(newSB); setPointIdxA(0); setPointIdxB(0);
-      setGameLog(prev => [{ time: formatTime(), team: sw, type:"set" }, ...prev].slice(0,50));
-      
-      const currentSetsToWin = Math.ceil(bestOf / 2);
-      let mw = null;
-      if (newSA >= currentSetsToWin || newSB >= currentSetsToWin) {
-        mw = newSA >= currentSetsToWin ? "A" : "B";
-        setMatchWinner(mw);
-      }
-      syncState({ pointIdxA: 0, pointIdxB: 0, setsA: newSA, setsB: newSB, matchWinner: mw });
-    } else {
-      setPointIdxA(nextIdxA); setPointIdxB(nextIdxB);
-      setGameLog(prev => [{ time: formatTime(), team, type:"point" }, ...prev].slice(0,50));
-      syncState({ pointIdxA: nextIdxA, pointIdxB: nextIdxB });
-    }
-  }, [matchWinner, pointIdxA, pointIdxB, setsA, setsB, bestOf, syncState, setPointIdxA, setPointIdxB, setSetsA, setSetsB, setMatchWinner, setMatchSetHistory, setGameLog]);
-
-  const removePoint = useCallback((team) => {
-    if (matchWinner) return;
-    let nA = pointIdxA, nB = pointIdxB;
-    if (team === "A" && pointIdxA > 0) { nA = pointIdxA - 1; setPointIdxA(nA); }
-    if (team === "B" && pointIdxB > 0) { nB = pointIdxB - 1; setPointIdxB(nB); }
-    if (nA === pointIdxA && nB === pointIdxB) return; // nothing changed
-    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(30);
-    syncState({ pointIdxA: nA, pointIdxB: nB });
-  }, [matchWinner, pointIdxA, pointIdxB, syncState, setPointIdxA, setPointIdxB]);
-
-  const revertSet = useCallback(() => {
-    if (setsA + setsB === 0 || matchWinner !== null) return;
-    
-    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(50);
-    
-    const lastSet = matchSetHistory[matchSetHistory.length - 1];
-    if (!lastSet) return;
-    
-    const newSA = lastSet.winner === "A" ? setsA - 1 : setsA;
-    const newSB = lastSet.winner === "B" ? setsB - 1 : setsB;
-    
-    const newHistory = matchSetHistory.slice(0, -1);
-    
-    const restoredIdxA = lastSet.pointIdxA ?? 0;
-    const restoredIdxB = lastSet.pointIdxB ?? 0;
-    
-    setSetsA(newSA);
-    setSetsB(newSB);
-    setPointIdxA(restoredIdxA);
-    setPointIdxB(restoredIdxB);
-    setMatchSetHistory(newHistory);
-    setGameLog(prev => [{ time: formatTime(), team: "system", type:"revert_set" }, ...prev].slice(0,50));
-    
-    syncState({ setsA: newSA, setsB: newSB, pointIdxA: restoredIdxA, pointIdxB: restoredIdxB });
-  }, [setsA, setsB, matchWinner, matchSetHistory, syncState, setSetsA, setSetsB, setPointIdxA, setPointIdxB, setMatchSetHistory, setGameLog]);
-
-  const substitutePlayer = useCallback((playerOut, playerIn) => {
-    if (!playerOut || !playerIn) return;
-    
-    const isInTeamA = teamA.includes(playerOut);
-    const isInTeamB = teamB.includes(playerOut);
-    
-    if (!isInTeamA && !isInTeamB) return;
-    
-    // update teams
-    const newTeamA = isInTeamA ? teamA.map(p => p === playerOut ? playerIn : p) : teamA;
-    const newTeamB = isInTeamB ? teamB.map(p => p === playerOut ? playerIn : p) : teamB;
-    
-    // update bench: remove playerIn, push playerOut to end
-    const filteredBench = bench.filter(p => p !== playerIn);
-    const newBench = [...filteredBench, playerOut];
-    
-    // update benchSince: playerOut gets 0 (last in queue)
-    const newBS = { ...benchSince, [playerOut]: 0 };
-    
-    flushSync(() => {
-      setTeamA(newTeamA);
-      setTeamB(newTeamB);
-      setBench(newBench);
-      setBenchSince(newBS);
-    });
-    
-    syncState({ teamA: newTeamA, teamB: newTeamB, bench: newBench, benchSince: newBS });
-  }, [teamA, teamB, bench, benchSince, syncState, setTeamA, setTeamB, setBench, setBenchSince]);
-
+  // ── startGame wrapper (needs to sync directly) ──
   const startGame = (tA, tB, b) => {
-    const initGP = {}, initBS = {};
-    players.forEach(p => { initGP[p] = 0; initBS[p] = 0; });
-    [...tA, ...tB].forEach(p => { initGP[p] = 1; });
-    setTeamA(tA); setTeamB(tB); setBench(b);
-    setGamesPlayed(initGP); setBenchSince(initBS);
-    setPointIdxA(0); setPointIdxB(0); setSetsA(0); setSetsB(0); setMatchWinner(null); setMatchSaved(false);
-    setScreen("game");
-    const st = {
-      screen: "game", teamA: tA, teamB: tB, bench: b,
-      pointIdxA:0, pointIdxB:0, setsA:0, setsB:0, matchWinner:null,
-      bestOf, gamesPlayed: initGP, benchSince: initBS,
-      localTimestamp: Date.now()
-    };
-    setActiveLiveMatch(st);
+    const st = rotation.startGame(tA, tB, b);
+    sync.setActiveLiveMatch(st);
     liveMatchService.sync(st);
   };
 
+  // ── doRotation wrapper ──
   const doRotation = (winner) => {
-    const losers  = winner === "A" ? [...teamB] : [...teamA];
-    const winners = winner === "A" ? [...teamA] : [...teamB];
-    const { nextTeamA, nextTeamB, nextBench } = pickNextFour(winners, losers, bench, gamesPlayed, benchSince);
-    const { newGP, newBS } = updateStats(gamesPlayed, benchSince, nextTeamA, nextTeamB, nextBench);
-    setTeamA(nextTeamA); setTeamB(nextTeamB); setBench(nextBench);
-    setGamesPlayed(newGP); setBenchSince(newBS);
-    setPointIdxA(0); setPointIdxB(0); setSetsA(0); setSetsB(0); setMatchWinner(null); setMatchSaved(false);
-    setScreen("game");
-    const st = {
-      screen: "game", teamA: nextTeamA, teamB: nextTeamB, bench: nextBench,
-      pointIdxA:0, pointIdxB:0, setsA:0, setsB:0, matchWinner:null,
-      bestOf, gamesPlayed: newGP, benchSince: newBS,
-      localTimestamp: Date.now()
-    };
-    setActiveLiveMatch(st);
+    const st = rotation.doRotation(winner);
+    sync.setActiveLiveMatch(st);
     liveMatchService.sync(st);
   };
 
-  // Subscriptions — uses handleRemoteUpdateRef to always call the latest handler
-  // without needing to resubscribe on every state change
-  useEffect(() => {
-    setSyncStatus("syncing");
-    loadPlayers(); loadRanking(); loadMatches();
-    liveMatchService.fetch().then(st => {
-      if (st && handleRemoteUpdateRef.current) {
-        handleRemoteUpdateRef.current(st);
-      }
-    }).catch(err => console.error("Failed to fetch live match", err));
-
-    const rankCh = supabase.channel("ranking-changes").on("postgres_changes", { event:"*", schema:"public", table:"ranking" }, loadRanking).subscribe();
-    const matchCh = supabase.channel("match-changes").on("postgres_changes", { event:"INSERT", schema:"public", table:"matches" }, loadMatches).subscribe();
-    const playerCh = supabase.channel("player-changes").on("postgres_changes", { event:"*", schema:"public", table:"players" }, loadPlayers).subscribe();
-    const liveCh = supabase.channel("live-match-changes").on("postgres_changes", { event:"UPDATE", schema:"public", table:"live_match", filter:"id=eq.1" }, (p) => {
-      if (handleRemoteUpdateRef.current) {
-        handleRemoteUpdateRef.current(p.new.state);
-      }
-    }).subscribe();
-
-    return () => {
-      supabase.removeChannel(rankCh); supabase.removeChannel(matchCh);
-      supabase.removeChannel(playerCh); supabase.removeChannel(liveCh);
-    };
-  }, [loadPlayers, loadRanking, loadMatches]);
-
+  // ── Return the same public API as the original hook ──
   return {
-    screen, setScreen,
-    players, addPlayer, removePlayer, addPlayerMidGame,
-    teamA, setTeamA, teamB, setTeamB, bench, setBench,
-    pointIdxA, pointIdxB, setsA, setsB,
-    addPoint, removePoint,
-    bestOf, setBestOf, setsToWin,
-    matchWinner, setMatchWinner,
-    rankingRows, matchHistory, resetRanking,
-    gamesPlayed, benchSince,
-    flash, gameLog, matchSetHistory,
-    syncStatus,
-    activeLiveMatch, joinLiveMatch,
-    startGame, doRotation, resetMatch, triggerFlash,
-    endSession, promotePlayersToNext, removePlayerFromBench, reorderBench,
-    revertSet, substitutePlayer, calculateDuoRanking,
-    todayMatches, todayRanking, todayDuoRanking, sortedBench
+    screen: rotation.screen, setScreen: rotation._setters.setScreen,
+    players: sync.players, addPlayer: sync.addPlayer, removePlayer: sync.removePlayer, addPlayerMidGame,
+    teamA: rotation.teamA, setTeamA: rotation._setters.setTeamA,
+    teamB: rotation.teamB, setTeamB: rotation._setters.setTeamB,
+    bench: rotation.bench, setBench: rotation._setters.setBench,
+    pointIdxA: scoring.pointIdxA, pointIdxB: scoring.pointIdxB,
+    setsA: scoring.setsA, setsB: scoring.setsB,
+    addPoint: scoring.addPoint, removePoint: scoring.removePoint,
+    bestOf: scoring.bestOf, setBestOf: scoring._setters.setBestOf, setsToWin: scoring.setsToWin,
+    matchWinner: scoring.matchWinner, setMatchWinner: scoring._setters.setMatchWinner,
+    rankingRows: sync.rankingRows, matchHistory: sync.matchHistory, resetRanking: sync.resetRanking,
+    gamesPlayed: rotation.gamesPlayed, benchSince: rotation.benchSince,
+    flash: scoring.flash, gameLog: scoring.gameLog, matchSetHistory: scoring.matchSetHistory,
+    syncStatus: sync.syncStatus,
+    activeLiveMatch: sync.activeLiveMatch, joinLiveMatch,
+    startGame, doRotation, resetMatch: scoring.resetMatch, triggerFlash: scoring.triggerFlash,
+    endSession: rotation.endSession,
+    promotePlayersToNext: rotation.promotePlayersToNext,
+    removePlayerFromBench: rotation.removePlayerFromBench,
+    reorderBench: rotation.reorderBench,
+    revertSet: scoring.revertSet, substitutePlayer: rotation.substitutePlayer,
+    calculateDuoRanking: sync.calculateDuoRanking,
+    todayMatches: sync.todayMatches, todayRanking: sync.todayRanking,
+    todayDuoRanking: sync.todayDuoRanking, sortedBench: rotation.sortedBench,
   };
 }
