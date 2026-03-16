@@ -25,7 +25,7 @@ export function GameScreen({ h }) {
   // ── MediaSession API (Bluetooth headphones) ──
   // Use refs so the effect doesn't re-run on every render
   const hRef = React.useRef(h);
-  hRef.current = h;
+  React.useEffect(() => { hRef.current = h; });
 
   useEffect(() => {
     if (!('mediaSession' in navigator) || h.matchWinner) return;
@@ -55,6 +55,8 @@ export function GameScreen({ h }) {
     return () => {
       audio.pause();
       audio.remove();
+      window.removeEventListener('click', tryPlay);
+      window.removeEventListener('touchend', tryPlay);
       navigator.mediaSession.setActionHandler('play', null);
       navigator.mediaSession.setActionHandler('pause', null);
       navigator.mediaSession.setActionHandler('previoustrack', null);

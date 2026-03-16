@@ -50,11 +50,19 @@ export const rankingService = {
         matches: currentMatches || []
       };
       localStorage.setItem(`bc_backup_${Date.now()}`, JSON.stringify(backup));
+
+      // 3. Keep only the last 3 backups to prevent localStorage bloat
+      const backupKeys = Object.keys(localStorage)
+        .filter(k => k.startsWith('bc_backup_'))
+        .sort();
+      while (backupKeys.length > 3) {
+        localStorage.removeItem(backupKeys.shift());
+      }
     } catch (e) {
       console.warn("Failed to create backup before reset", e);
     }
     
-    // 3. Proceed with deletion
+    // 4. Proceed with deletion
     await supabase.from("ranking").delete().neq("player_name", "");
     await supabase.from("matches").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   }

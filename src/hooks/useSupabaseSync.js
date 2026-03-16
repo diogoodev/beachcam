@@ -128,9 +128,13 @@ export function useSupabaseSync() {
 
   // ── Ranking Computations ──
   const todayMatches = useMemo(() => {
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    return matchHistory.filter(m => m.played_at && m.played_at.startsWith(todayStr));
+    const today = new Date();
+    const todayStr = today.toLocaleDateString('sv-SE'); // YYYY-MM-DD in local timezone
+    return matchHistory.filter(m => {
+      if (!m.played_at) return false;
+      const matchDate = new Date(m.played_at).toLocaleDateString('sv-SE');
+      return matchDate === todayStr;
+    });
   }, [matchHistory]);
 
   const todayRanking = useMemo(() => {

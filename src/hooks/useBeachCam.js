@@ -135,7 +135,7 @@ export function useBeachCam() {
   // ── Return the same public API as the original hook ──
   return {
     screen: rotation.screen, setScreen: rotation._setters.setScreen,
-    players: sync.players, addPlayer: sync.addPlayer, removePlayer: sync.removePlayer, addPlayerMidGame,
+    players: sync.players, addPlayer: sync.addPlayerToList, removePlayer: sync.removePlayer, addPlayerMidGame,
     teamA: rotation.teamA, setTeamA: rotation._setters.setTeamA,
     teamB: rotation.teamB, setTeamB: rotation._setters.setTeamB,
     bench: rotation.bench, setBench: rotation._setters.setBench,

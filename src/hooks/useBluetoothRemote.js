@@ -76,13 +76,13 @@ export function useBluetoothRemote(onAction, isActive = true) {
     };
 
     // Use capture phase to intercept before anything else
+    const keyupHandler = (e) => e.preventDefault();
     window.addEventListener('keydown', handler, { capture: true, passive: false });
-    window.addEventListener('keyup', (e) => e.preventDefault(), { capture: true, passive: false });
+    window.addEventListener('keyup', keyupHandler, { capture: true, passive: false });
 
     return () => {
       window.removeEventListener('keydown', handler, { capture: true });
-      // Note: anonymous keyup handler won't be removed perfectly, 
-      // but it's harmless as it only calls preventDefault
+      window.removeEventListener('keyup', keyupHandler, { capture: true });
     };
   }, [isActive, processClick]);
 
@@ -162,7 +162,6 @@ export function useBluetoothRemote(onAction, isActive = true) {
       ref: inputRef,
       onKeyDown: handleInputKeyDown,
       onKeyUp: (e) => { e.preventDefault(); e.stopPropagation(); },
-      onKeyPress: (e) => { e.preventDefault(); e.stopPropagation(); },
       style: {
         position: 'absolute',
         opacity: 0,

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import { useLocalState } from "./useLocalState";
 import { POINT_SEQUENCE, POINT_LABELS } from "../utils/constants";
 import { formatTime } from "../utils/gameLogic";
@@ -23,7 +23,7 @@ export function useMatchScoring(onSyncRef) {
   const setsToWin = Math.ceil(bestOf / 2);
 
   const flashTimerRef = useRef(null);
-  const triggerFlash = (val) => {
+  const triggerFlash = useCallback((val) => {
     if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
     setFlash(val);
     flashTimerRef.current = setTimeout(() => {
@@ -31,7 +31,7 @@ export function useMatchScoring(onSyncRef) {
       flashTimerRef.current = null;
     }, 700);
     if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(50);
-  };
+  }, []);
 
   const lastPointTime = useRef(0);
 
