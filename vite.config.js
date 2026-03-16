@@ -8,24 +8,64 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['logoBeachCam.png', 'logoBeachCam.svg', 'logoBeachCam.ico'],
+      includeAssets: ['logoBeachCam.png', 'logoBeachCam.svg', 'logoBeachCam.ico', 'screenshot_mobile.jpg', 'screenshot_desktop.jpg', 'court-bg.jpg'],
       manifest: {
+        id: '/?source=pwa',
+        start_url: '/?source=pwa',
         name: 'BeachCam',
         short_name: 'BeachCam',
         description: 'BeachCam - Aplicativo de placar e ranking para Beach Tennis',
         theme_color: '#000000',
         background_color: '#000000',
         display: 'standalone',
+        orientation: 'portrait',
+        dir: 'ltr',
+        lang: 'pt-BR',
+        categories: ['sports', 'games', 'entertainment'],
         icons: [
           {
             src: 'logoBeachCam.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any maskable'
           },
           {
             src: 'logoBeachCam.png',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ],
+        screenshots: [
+          {
+            src: 'screenshot_mobile.jpg',
+            sizes: '1080x1920',
+            type: 'image/jpeg',
+            form_factor: 'narrow',
+            label: 'Tela Inicial BeachCam'
+          },
+          {
+            src: 'screenshot_desktop.png',
+            sizes: '1920x1080',
+            type: 'image/png',
+            form_factor: 'wide',
+            label: 'Visão Geral do Jogo'
+          }
+        ],
+        shortcuts: [
+          {
+            name: "Novo Jogo",
+            short_name: "Novo Jogo",
+            description: "Iniciar uma nova partida de Beach Tennis",
+            url: "/?action=new",
+            icons: [{ src: "logoBeachCam.png", sizes: "192x192" }]
+          },
+          {
+            name: "Ver Ranking",
+            short_name: "Ranking",
+            description: "Checar o ranking atualizado",
+            url: "/?action=ranking",
+            icons: [{ src: "logoBeachCam.png", sizes: "192x192" }]
           }
         ]
       }
