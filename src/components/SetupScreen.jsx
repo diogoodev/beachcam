@@ -97,7 +97,7 @@ export function SetupScreen({ h }) {
             value={newPlayer} 
             onChange={e => setNewPlayer(e.target.value)} 
             onKeyDown={e => e.key === "Enter" && handleAdd()} 
-            maxLength={10}
+            maxLength={20}
           />
           <button 
             onClick={handleAdd}

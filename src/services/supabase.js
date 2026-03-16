@@ -38,6 +38,23 @@ export const rankingService = {
     }, { onConflict: "player_name" });
   },
   async reset() {
+    try {
+      // 1. Fetch current data to backup
+      const { data: currentRanking } = await supabase.from("ranking").select("*");
+      const { data: currentMatches } = await supabase.from("matches").select("*");
+      
+      // 2. Save to localStorage as a safety net
+      const backup = {
+        timestamp: new Date().toISOString(),
+        ranking: currentRanking || [],
+        matches: currentMatches || []
+      };
+      localStorage.setItem(`bc_backup_${Date.now()}`, JSON.stringify(backup));
+    } catch (e) {
+      console.warn("Failed to create backup before reset", e);
+    }
+    
+    // 3. Proceed with deletion
     await supabase.from("ranking").delete().neq("player_name", "");
     await supabase.from("matches").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   }

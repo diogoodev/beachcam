@@ -25,17 +25,19 @@ export function useBeachCam() {
 
   // ── Wire the sync callback ──
   // This builds the full state and calls syncState on the sync hook
-  onSyncRef.current = useCallback((overrides = {}) => {
-    const st = {
-      screen: (rotation.teamA && rotation.teamA.length > 0) ? "game" : "setup",
-      teamA: rotation.teamA, teamB: rotation.teamB, bench: rotation.bench,
-      pointIdxA: scoring.pointIdxA, pointIdxB: scoring.pointIdxB,
-      setsA: scoring.setsA, setsB: scoring.setsB,
-      matchWinner: scoring.matchWinner, bestOf: scoring.bestOf,
-      gamesPlayed: rotation.gamesPlayed, benchSince: rotation.benchSince,
-      ...overrides
+  useEffect(() => {
+    onSyncRef.current = (overrides = {}) => {
+      const st = {
+        screen: (rotation.teamA && rotation.teamA.length > 0) ? "game" : "setup",
+        teamA: rotation.teamA, teamB: rotation.teamB, bench: rotation.bench,
+        pointIdxA: scoring.pointIdxA, pointIdxB: scoring.pointIdxB,
+        setsA: scoring.setsA, setsB: scoring.setsB,
+        matchWinner: scoring.matchWinner, bestOf: scoring.bestOf,
+        gamesPlayed: rotation.gamesPlayed, benchSince: rotation.benchSince,
+        ...overrides
+      };
+      sync.syncState(st);
     };
-    sync.syncState(st);
   }, [rotation.teamA, rotation.teamB, rotation.bench, scoring.pointIdxA, scoring.pointIdxB, scoring.setsA, scoring.setsB, scoring.matchWinner, scoring.bestOf, rotation.gamesPlayed, rotation.benchSince, sync.syncState]);
 
   // ── Handle remote updates ──

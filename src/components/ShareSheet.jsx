@@ -91,19 +91,19 @@ export function ShareSheet({ type, data, isDuo = false, duoData = [], onClose })
           <div className="flex bg-white/5 p-1 rounded-full border border-white/10 mb-4 w-full max-w-xs shrink-0">
             <button 
               onClick={() => setRankingType('jogadores')}
-              className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all ${rankingType === 'jogadores' ? 'bg-[var(--neon-blue)]/20 text-[var(--neon-blue)] shadow-md' : 'text-white/40 hover:text-white/80'}`}
+              className={`flex-1 py-2 label-text rounded-full transition-all ${rankingType === 'jogadores' ? 'bg-[var(--neon-blue)]/20 text-[var(--neon-blue)] shadow-md' : 'text-white/40 hover:text-white/80'}`}
             >
               Jogadores
             </button>
             <button 
               onClick={() => setRankingType('duplas')}
-              className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all ${rankingType === 'duplas' ? 'bg-[var(--neon-orange)]/20 text-[var(--neon-orange)] shadow-md' : 'text-white/40 hover:text-white/80'}`}
+              className={`flex-1 py-2 label-text rounded-full transition-all ${rankingType === 'duplas' ? 'bg-[var(--neon-orange)]/20 text-[var(--neon-orange)] shadow-md' : 'text-white/40 hover:text-white/80'}`}
             >
               Duplas
             </button>
             <button 
               onClick={() => setRankingType('ambos')}
-              className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all ${rankingType === 'ambos' ? 'bg-[var(--neon-green)]/20 text-[var(--neon-green)] shadow-md' : 'text-white/40 hover:text-white/80'}`}
+              className={`flex-1 py-2 label-text rounded-full transition-all ${rankingType === 'ambos' ? 'bg-[var(--neon-green)]/20 text-[var(--neon-green)] shadow-md' : 'text-white/40 hover:text-white/80'}`}
             >
               Ambos
             </button>
@@ -114,14 +114,14 @@ export function ShareSheet({ type, data, isDuo = false, duoData = [], onClose })
         <div className="flex bg-white/5 p-1 rounded-full border border-white/10 mb-5 w-full max-w-[240px] shrink-0">
           <button 
             onClick={() => setFormat('story')}
-            className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all flex items-center justify-center gap-1 ${format === 'story' ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
+            className={`flex-1 py-2 label-text rounded-full transition-all flex items-center justify-center gap-1 ${format === 'story' ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
           >
             <span className="material-symbols-outlined text-[14px]">smartphone</span>
             Story
           </button>
           <button 
             onClick={() => setFormat('square')}
-            className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-full transition-all flex items-center justify-center gap-1 ${format === 'square' ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
+            className={`flex-1 py-2 label-text rounded-full transition-all flex items-center justify-center gap-1 ${format === 'square' ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
           >
             <span className="material-symbols-outlined text-[14px]">crop_square</span>
             Feed
@@ -147,7 +147,7 @@ export function ShareSheet({ type, data, isDuo = false, duoData = [], onClose })
             className="flex-1 bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] rounded-2xl py-3 flex flex-col items-center justify-center gap-1 shadow-lg active:scale-95 transition-all text-white disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-2xl">share</span>
-            <span className="text-[10px] font-bold uppercase tracking-wider">Instagram</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider">Social</span>
           </button>
           
           <button
@@ -156,7 +156,7 @@ export function ShareSheet({ type, data, isDuo = false, duoData = [], onClose })
             className="flex-1 bg-[#25D366] rounded-2xl py-3 flex flex-col items-center justify-center gap-1 shadow-lg active:scale-95 transition-all text-white disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-2xl">chat</span>
-            <span className="text-[10px] font-bold uppercase tracking-wider">WhatsApp</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider">Mensagem</span>
           </button>
 
           <button

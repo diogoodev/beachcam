@@ -1,14 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { getInitials } from '../utils/helpers';
+import { ConfirmModal } from './ui/ConfirmModal';
+import { AddPlayerSheet } from './rotation/AddPlayerSheet';
+import { OverrideSheet } from './rotation/OverrideSheet';
 
 export function RotationScreen({ h }) {
   const [showFullBench, setShowFullBench] = useState(false);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
   const [showOverrideSheet, setShowOverrideSheet] = useState(false);
-  const [overrideSelection, setOverrideSelection] = useState([]);
-  const [newPlayerName, setNewPlayerName] = useState("");
-  const [adding, setAdding] = useState(false);
-  const inputRef = useRef(null);
+  const [confirmPlayerToRemove, setConfirmPlayerToRemove] = useState(null);
 
   // Move player up or down in the sorted bench list
   const movePlayer = (sortedList, fromIdx, direction) => {
@@ -19,57 +19,14 @@ export function RotationScreen({ h }) {
     h.reorderBench(newOrder);
   };
 
-  // Foca o input quando o sheet abre
-  useEffect(() => {
-    if (showAddPlayer) {
-      setTimeout(() => inputRef.current?.focus(), 150);
-    } else {
-      setNewPlayerName("");
-    }
-  }, [showAddPlayer]);
-
-  const handleAddPlayer = async () => {
-    const trimmed = newPlayerName.trim();
-    if (!trimmed || adding) return;
-    if (h.players.includes(trimmed)) {
-      setNewPlayerName("");
-      return;
-    }
-    setAdding(true);
-    await h.addPlayerMidGame(trimmed);
-    setAdding(false);
-    setShowAddPlayer(false);
-  };
-
-  const handleToggleOverridePlayer = (player) => {
-    setOverrideSelection(prev => {
-      if (prev.includes(player)) return prev.filter(p => p !== player);
-      if (prev.length < 2) return [...prev, player];
-      return [prev[1], player]; // shifts the oldest selection out
-    });
-  };
-
-  const confirmOverride = () => {
-    if (overrideSelection.length > 0) {
-      h.promotePlayersToNext(overrideSelection);
-      setOverrideSelection([]);
-    }
-    setShowOverrideSheet(false);
-  };
-
-  // Component relies on shared bench sorting logic now
   const sortedBenchDisplay = h.sortedBench;
-
-  // Next Duo Prediction
   const nextDuo = sortedBenchDisplay.slice(0, 2);
 
-  // Player Stats for Highlight
   let topPlayer = null;
   let topWR = -1;
   let topWinsFallback = -1;
 
   h.rankingRows.forEach(row => {
-    // Only consider players who are playing today (or simply all in db with games)
     if (row.games > 0) {
       const wr = Math.round((row.wins / row.games) * 100);
       if (wr > topWR || (wr === topWR && row.wins > topWinsFallback)) {
@@ -162,10 +119,7 @@ export function RotationScreen({ h }) {
             </div>
             <div className="flex justify-start pt-2">
               <button 
-                onClick={() => {
-                  setOverrideSelection([]); // limpa estado antigo
-                  setShowOverrideSheet(true);
-                }} 
+                onClick={() => setShowOverrideSheet(true)} 
                 className="text-[10px] flex items-center gap-1 text-white hover:text-black hover:bg-neon-orange transition-colors bg-white/10 py-1.5 px-3 rounded-full font-bold uppercase tracking-wider backdrop-blur-sm"
               >
                 <span className="material-symbols-outlined text-[14px]">edit</span> Alterar
@@ -248,7 +202,7 @@ export function RotationScreen({ h }) {
                       {h.gamesPlayed[p] || 0} jogos
                     </div>
                     <button 
-                      onClick={() => { if(window.confirm(`Remover ${p} da fila de espera?`)) h.removePlayerFromBench(p); }}
+                      onClick={() => setConfirmPlayerToRemove(p)}
                       className="text-red-400 opacity-60 hover:opacity-100 p-1 rounded-md hover:bg-red-500/20 transition-all flex items-center justify-center -mr-1"
                       title="Remover da Fila"
                     >
@@ -265,145 +219,26 @@ export function RotationScreen({ h }) {
 
       </main>
 
-      {/* ── BOTTOM SHEET: Adicionar Jogador Mid-Game ── */}
       {showAddPlayer && (
-        <>
-          {/* Overlay escuro */}
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-            onClick={() => setShowAddPlayer(false)}
-          />
-
-          {/* Sheet */}
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0f0f0f] border-t border-white/10 rounded-t-3xl p-6 pb-28 shadow-2xl">
-            {/* Handle */}
-            <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5" />
-
-            <div className="text-xs font-bold text-[var(--neon-green)] tracking-widest uppercase mb-1">
-              Adicionar à fila
-            </div>
-            <p className="text-white/50 text-xs mb-5">
-              O jogador entra no final da fila de espera sem reiniciar a sessão.
-            </p>
-
-            {/* Input */}
-            <div className="flex gap-3 mb-5 flex-col md:flex-row">
-              <input
-                ref={inputRef}
-                className="flex-1 bg-white/5 border border-white/15 rounded-xl px-4 py-3 text-white font-bold placeholder:text-white/30 focus:outline-none focus:border-[var(--neon-green)] transition-colors"
-                placeholder="Nome do jogador..."
-                value={newPlayerName}
-                maxLength={10}
-                onChange={e => setNewPlayerName(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleAddPlayer()}
-              />
-              <button
-                onClick={handleAddPlayer}
-                disabled={!newPlayerName.trim() || adding || h.players.includes(newPlayerName.trim())}
-                className="btn-shimmer bg-[var(--neon-green)] text-black px-5 py-3 rounded-xl font-black uppercase text-sm active:scale-95 transition-all disabled:opacity-30 disabled:pointer-events-none shadow-[0_0_16px_rgba(198,255,0,0.25)] flex items-center justify-center"
-              >
-                {adding ? "..." : "Entrar"}
-              </button>
-            </div>
-
-            {/* Aviso se jogador já existe */}
-            {newPlayerName.trim() && h.players.includes(newPlayerName.trim()) && (
-              <p className="text-red-400 text-xs font-bold mb-4">
-                "{newPlayerName.trim()}" já está na sessão.
-              </p>
-            )}
-
-            {/* Jogadores já na sessão (para referência visual) */}
-            {h.bench.length > 0 && (
-              <div>
-                <div className="text-[10px] text-white/30 font-bold uppercase tracking-widest mb-2">Na fila agora</div>
-                <div className="flex flex-wrap gap-2">
-                  {sortedBenchDisplay.map(p => (
-                    <div key={p} className="flex items-center gap-1.5 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
-                      <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[9px] font-bold">
-                        {getInitials(p)}
-                      </div>
-                      <span className="text-xs text-white/60 font-medium">{p}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </>
+        <AddPlayerSheet h={h} onClose={() => setShowAddPlayer(false)} sortedBenchDisplay={sortedBenchDisplay} />
       )}
 
-      {/* ── BOTTOM SHEET: Alterar Próxima Dupla (Override) ── */}
       {showOverrideSheet && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-            onClick={() => setShowOverrideSheet(false)}
-          />
-
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0f0f0f] border-t border-[var(--neon-orange)]/30 rounded-t-3xl p-6 pb-28 shadow-[0_-10px_40px_rgba(255,107,0,0.15)] flex flex-col max-h-[85vh]">
-            <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5 shrink-0" />
-
-            <div className="text-xs font-bold text-[var(--neon-orange)] tracking-widest uppercase mb-1">
-              Escalar Próxima Dupla
-            </div>
-            <p className="text-white/50 text-xs mb-5">
-              Selecione 1 ou 2 jogadores da fila que devem entrar na próxima rotação furando a ordem atual.
-            </p>
-
-            <div className="flex-1 overflow-y-auto custom-scrollbar mb-4 pr-2">
-              <div className="flex flex-col gap-2">
-                {sortedBenchDisplay.length > 0 ? sortedBenchDisplay.map(p => {
-                  const isSelected = overrideSelection.includes(p);
-                  return (
-                    <button
-                      key={p}
-                      onClick={() => handleToggleOverridePlayer(p)}
-                      className={`flex items-center justify-between p-3 rounded-xl border transition-all ${isSelected ? 'bg-[var(--neon-orange)]/10 border-[var(--neon-orange)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-colors ${isSelected ? 'border-[var(--neon-orange)] text-[var(--neon-orange)] shadow-[0_0_10px_rgba(255,107,0,0.3)] bg-black/40' : 'border-white/20 text-white bg-white/5'}`}>
-                          {getInitials(p)}
-                        </div>
-                        <span className={`font-semibold text-sm transition-colors ${isSelected ? 'text-[var(--neon-orange)]' : 'text-white'}`}>
-                          {p}
-                        </span>
-                      </div>
-                      
-                      {/* Checkbox Indicador */}
-                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isSelected ? 'border-[var(--neon-green)] shadow-[0_0_8px_rgba(198,255,0,0.3)] bg-black/40' : 'border-white/30'}`}>
-                        {isSelected && <span className="material-symbols-outlined text-[var(--neon-green)] text-[14px] font-bold">check</span>}
-                      </div>
-                    </button>
-                  );
-                }) : (
-                  <div className="text-sm text-gray-sub text-center py-4 italic">Nenhum jogador na fila de espera.</div>
-                )}
-              </div>
-            </div>
-
-            <div className="shrink-0 pt-2 flex gap-3">
-              <button
-                onClick={() => setShowOverrideSheet(false)}
-                className="flex-1 bg-white/5 border border-white/10 text-white rounded-xl py-4 font-bold uppercase tracking-wider text-sm hover:bg-white/10 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={confirmOverride}
-                disabled={overrideSelection.length === 0}
-                className={`btn-shimmer flex-1 rounded-xl py-4 font-black uppercase tracking-wider text-sm active:scale-95 transition-all shadow-[0_0_20px_rgba(255,107,0,0.3)] disabled:opacity-30 disabled:pointer-events-none ${
-                  overrideSelection.length === 2 
-                    ? "bg-[#111] border-2 border-[var(--neon-orange)] text-[var(--neon-orange)]" 
-                    : "bg-[var(--neon-orange)] text-black border-2 border-transparent"
-                }`}
-              >
-                Confirmar
-              </button>
-            </div>
-          </div>
-        </>
+        <OverrideSheet h={h} onClose={() => setShowOverrideSheet(false)} sortedBenchDisplay={sortedBenchDisplay} />
       )}
+      
+      <ConfirmModal
+        isOpen={!!confirmPlayerToRemove}
+        title="Remover Jogador"
+        message={`Tem certeza que deseja remover ${confirmPlayerToRemove} da fila de espera?`}
+        confirmText="Remover"
+        isDestructive={true}
+        onConfirm={() => {
+          if (confirmPlayerToRemove) h.removePlayerFromBench(confirmPlayerToRemove);
+          setConfirmPlayerToRemove(null);
+        }}
+        onCancel={() => setConfirmPlayerToRemove(null)}
+      />
 
     </div>
   );

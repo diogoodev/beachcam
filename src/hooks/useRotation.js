@@ -153,10 +153,10 @@ export function useRotation(onSyncRef, resetScoringFn, players, bestOf) {
   }, [onSyncRef, resetScoringFn, setScreen, setTeamA, setTeamB, setBench, setGamesPlayed, setBenchSince]);
 
   // Setters exposed for applyRemoteState
-  const _setters = {
+  const _setters = useMemo(() => ({
     setScreen, setTeamA, setTeamB, setBench,
     setGamesPlayed, setBenchSince,
-  };
+  }), [setScreen, setTeamA, setTeamB, setBench, setGamesPlayed, setBenchSince]);
 
   return {
     screen, setScreen,

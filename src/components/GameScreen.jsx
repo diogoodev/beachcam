@@ -3,12 +3,14 @@ import { POINT_SEQUENCE, POINT_LABELS } from '../utils/constants';
 import { SubstitutionSheet } from './SubstitutionSheet';
 import { ShareSheet } from './ShareSheet';
 import { useRemoteControl } from '../hooks/useRemoteControl';
+import { ConfirmModal } from './ui/ConfirmModal';
 
 export function GameScreen({ h }) {
   const [showSubstitution, setShowSubstitution] = useState(false);
   const [shareMatchData, setShareMatchData] = useState(null);
   const [showRemotePanel, setShowRemotePanel] = useState(false);
   const [remoteEnabled, setRemoteEnabled] = useState(false);
+  const [confirmEndSession, setConfirmEndSession] = useState(false);
 
   // ── Remote Control (Smartwatch / Second device) ──
   const onPointA = useCallback(() => h.addPoint("A"), [h]);
@@ -127,7 +129,7 @@ export function GameScreen({ h }) {
               </div>
 
               {/* Connection Status */}
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest ${remoteConnected ? 'bg-[var(--neon-green)]/10 text-[var(--neon-green)]' : 'bg-white/5 text-white/30'}`}>
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-xl label-text ${remoteConnected ? 'bg-[var(--neon-green)]/10 text-[var(--neon-green)]' : 'bg-white/5 text-white/30'}`}>
                 <div className={`w-2 h-2 rounded-full ${remoteConnected ? 'bg-[var(--neon-green)] animate-pulse shadow-[0_0_8px_var(--neon-green)]' : 'bg-white/20'}`}></div>
                 {remoteConnected ? 'Dispositivo conectado' : 'Aguardando conexão...'}
               </div>
@@ -147,7 +149,7 @@ export function GameScreen({ h }) {
             </div>
           )}
 
-          <button onClick={() => setShowRemotePanel(false)} className="mt-3 w-full bg-white/10 border border-white/20 rounded-xl py-2 text-white/70 text-[10px] font-bold uppercase tracking-widest">
+          <button onClick={() => setShowRemotePanel(false)} className="mt-3 w-full bg-white/10 border border-white/20 rounded-xl py-2 text-white/70 label-text">
             Fechar
           </button>
         </div>
@@ -197,17 +199,27 @@ export function GameScreen({ h }) {
             </button>
             <button 
               className="btn-shimmer w-full bg-red-600/80 hover:bg-red-600 text-white rounded-xl py-3 font-bold uppercase border border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.3)] active:scale-95 transition-all text-xs md:text-sm tracking-widest mt-1"
-              onClick={() => {
-                if(window.confirm("Certeza que deseja encerrar a sessão de jogos?")) {
-                  h.endSession();
-                }
-              }}
+              onClick={() => setConfirmEndSession(true)}
             >
               Encerrar Sessão
             </button>
           </div>
         </div>
       )}
+
+      {/* Confirm End Session Modal */}
+      <ConfirmModal
+        isOpen={confirmEndSession}
+        title="Encerrar Sessão"
+        message="Certeza que deseja encerrar a sessão de jogos? Todos os jogadores sairão de quadra e da fila."
+        confirmText="Encerrar"
+        isDestructive={true}
+        onConfirm={() => {
+          h.endSession();
+          setConfirmEndSession(false);
+        }}
+        onCancel={() => setConfirmEndSession(false)}
+      />
 
       <main className="flex-1 w-full max-w-sm px-4 flex flex-col justify-center gap-10 relative z-10 h-full">
         

@@ -48,17 +48,6 @@ export function useSupabaseSync() {
   }, []);
 
   // ── Player Management ──
-  const addPlayer = async (name) => {
-    if (name && !players.includes(name)) {
-      try {
-        setPlayers(p => [...p, name]);
-        await playersService.add(name);
-      } catch (e) {
-        console.error("Failed to add player", e);
-        setPlayers(pl => pl.filter(x => x !== name));
-      }
-    }
-  };
 
   const removePlayer = async (name) => {
     const backup = [...players];
@@ -95,7 +84,9 @@ export function useSupabaseSync() {
       const sL = winner === "A" ? sb : sa;
       await matchesService.save(winner, winTeam, loseTeam, sW, sL);
 
-      // Fetch fresh ranking data to avoid stale closure
+      // We no longer rely on the component closure's `rankingRows`.
+      // We explicitly fetch fresh from Supabase. Next renders will 
+      // see it via the Postgres subscription anyway.
       const freshRanking = await rankingService.fetchAll();
 
       await Promise.all([
@@ -209,7 +200,7 @@ export function useSupabaseSync() {
     // State
     players, rankingRows, matchHistory, syncStatus, activeLiveMatch, localTimestamp,
     // Player management
-    addPlayer, removePlayer, addPlayerToList,
+    removePlayer, addPlayerToList,
     // Match persistence
     saveMatch, resetRanking,
     // Live sync

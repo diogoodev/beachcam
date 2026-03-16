@@ -132,11 +132,11 @@ export function useMatchScoring(onSyncRef) {
   }, [gameLog, removePoint, setGameLog]);
 
   // Setters exposed for applyRemoteState and orchestrator
-  const setters = {
+  const setters = useMemo(() => ({
     setPointIdxA, setPointIdxB, setSetsA, setSetsB,
     setBestOf, setMatchWinner, setMatchSaved,
     setMatchSetHistory, setGameLog,
-  };
+  }), [setPointIdxA, setPointIdxB, setSetsA, setSetsB, setBestOf, setMatchWinner, setMatchSaved, setMatchSetHistory, setGameLog]);
 
   return {
     // State
