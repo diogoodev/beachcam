@@ -14,11 +14,43 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true);
 
   // OBS-2: Handle PWA shortcut URLs (/?action=new, /?action=ranking)
+  // E também Share Target e Protocol Handlers
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    
+    // 1. Shortcuts & Actions
     const action = params.get('action');
     if (action === 'new') h.setScreen('setup');
     else if (action === 'ranking') h.setScreen('ranking');
+    
+    // 2. Share Target parameters
+    const sharedTitle = params.get('title');
+    const sharedText = params.get('text');
+    const sharedUrl = params.get('url');
+    if (sharedTitle || sharedText || sharedUrl) {
+      console.log("Recebido via Share Target:", { sharedTitle, sharedText, sharedUrl });
+      // Remove parâmetros da URL para não processar novamente em reload
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Aqui poderíamos ter um alert customizado, toast, ou preencher um form.
+    }
+
+    // 3. Protocol Handler parameters (web+beachcam://...?route=...)
+    const route = params.get('route');
+    if (route) {
+      console.log("Recebido via Protocol Handler:", route);
+      // Ex: route = web+beachcam://ranking -> route estaria apenas como "ranking" devido ao mask na config
+      // Mas o navegador costuma passar a URL completa, então podemos precisar fazer um parsing:
+      try {
+        const urlObj = new URL(route);
+        if (urlObj.pathname === '/ranking') h.setScreen('ranking');
+        else if (urlObj.pathname === '/new') h.setScreen('setup');
+      } catch (e) {
+        // Fallback caso a route venha apenas como string simples
+        if (route.includes('ranking')) h.setScreen('ranking');
+      }
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (

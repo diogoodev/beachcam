@@ -9,7 +9,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'prompt',
       injectRegister: 'script',
-      includeAssets: ['logoBeachCam.png', 'logoBeachCam.svg', 'logoBeachCam.ico', 'screenshot_mobile.png', 'screenshot_mobile_1.png', 'screenshot_mobile_2.png', 'screenshot_mobile_3.png', 'screenshot_mobile_4.png', 'screenshot_desktop.png', 'court-bg.jpg', 'logoBeachCam-192.png', 'logoBeachCam-512.png'],
+      includeAssets: ['logoBeachCam.png', 'logoBeachCam.svg', 'logoBeachCam.ico', 'logoBeachCam-192-maskable.png', 'logoBeachCam-512-maskable.png', 'screenshot_mobile.png', 'screenshot_mobile_1.png', 'screenshot_mobile_2.png', 'screenshot_mobile_3.png', 'screenshot_mobile_4.png', 'screenshot_desktop.png', 'court-bg.jpg', 'logoBeachCam-192.png', 'logoBeachCam-512.png'],
       manifest: {
         id: '/?source=pwa',
         start_url: '/?source=pwa',
@@ -36,13 +36,25 @@ export default defineConfig({
             src: 'logoBeachCam-192.png',
             sizes: '192x192',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          {
+            src: 'logoBeachCam-192-maskable.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable'
           },
           {
             src: 'logoBeachCam-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          {
+            src: 'logoBeachCam-512-maskable.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ],
         screenshots: [
@@ -103,6 +115,21 @@ export default defineConfig({
             description: "Checar o ranking atualizado",
             url: "/?action=ranking",
             icons: [{ src: "logoBeachCam-192.png", sizes: "192x192", type: "image/png" }]
+          }
+        ],
+        share_target: {
+          action: "/",
+          method: "GET",
+          params: {
+            title: "title",
+            text: "text",
+            url: "url"
+          }
+        },
+        protocol_handlers: [
+          {
+            protocol: "web+beachcam",
+            url: "/?route=%s"
           }
         ]
       }
