@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['logoBeachCam.png', 'logoBeachCam.svg', 'logoBeachCam.ico', 'screenshot_mobile.jpg', 'screenshot_desktop.jpg', 'court-bg.jpg', 'logoBeachCam-192.png', 'logoBeachCam-512.png'],
       manifest: {
         id: '/?source=pwa',

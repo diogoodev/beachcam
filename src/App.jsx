@@ -6,6 +6,7 @@ import { RankingScreen } from "./components/RankingScreen";
 import { RotationScreen } from "./components/RotationScreen";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { SplashScreen } from "./components/SplashScreen";
+import { ReloadPrompt } from "./components/ReloadPrompt";
 
 export default function App() {
   const h = useBeachCam();
@@ -41,6 +42,8 @@ export default function App() {
         {h.screen === "ranking"  && <RankingScreen h={h} />}
         {h.screen === "rotation" && <RotationScreen h={h} />}
       </main>
+
+      <ReloadPrompt />
 
       {/* BOTTOM NAVIGATION (Always visible) */}
       <nav className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 flex justify-around items-center z-50">
