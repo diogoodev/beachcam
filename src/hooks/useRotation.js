@@ -1,7 +1,7 @@
 import { useMemo, useCallback } from "react";
 import { flushSync } from "react-dom";
 import { useLocalState } from "./useLocalState";
-import { pickNextFour, updateStats } from "../utils/gameLogic";
+import { pickNextFour, updateStats, sortBenchPlayers } from "../utils/gameLogic";
 
 /**
  * useRotation — manages teams, bench, rotation, and substitution logic.
@@ -20,10 +20,7 @@ export function useRotation(onSyncRef, resetScoringFn, players, bestOf) {
   const [benchSince, setBenchSince] = useLocalState("bc_benchSince", {});
 
   const sortedBench = useMemo(() => {
-    return [...bench].sort((a, b) => {
-      const d = (benchSince[b] ?? 0) - (benchSince[a] ?? 0);
-      return d !== 0 ? d : (gamesPlayed[a] ?? 0) - (gamesPlayed[b] ?? 0);
-    });
+    return sortBenchPlayers(bench, benchSince, gamesPlayed);
   }, [bench, benchSince, gamesPlayed]);
 
   const substitutePlayer = useCallback((playerOut, playerIn) => {
@@ -49,7 +46,7 @@ export function useRotation(onSyncRef, resetScoringFn, players, bestOf) {
     onSyncRef.current?.({ teamA: newTeamA, teamB: newTeamB, bench: newBench, benchSince: newBS });
   }, [teamA, teamB, bench, benchSince, onSyncRef, setTeamA, setTeamB, setBench, setBenchSince]);
 
-  const removePlayerFromBench = (name) => {
+  const removePlayerFromBench = useCallback((name) => {
     const newBench = bench.filter(p => p !== name);
     const newGP = { ...gamesPlayed };
     const newBS = { ...benchSince };
@@ -67,9 +64,9 @@ export function useRotation(onSyncRef, resetScoringFn, players, bestOf) {
       gamesPlayed: newGP,
       benchSince: newBS
     });
-  };
+  }, [bench, gamesPlayed, benchSince, onSyncRef, setBench, setGamesPlayed, setBenchSince]);
 
-  const reorderBench = (newOrder) => {
+  const reorderBench = useCallback((newOrder) => {
     const newBS = { ...benchSince };
     newOrder.forEach((p, i) => {
       newBS[p] = newOrder.length - i;
@@ -80,9 +77,9 @@ export function useRotation(onSyncRef, resetScoringFn, players, bestOf) {
     });
 
     onSyncRef.current?.({ benchSince: newBS });
-  };
+  }, [benchSince, onSyncRef, setBenchSince]);
 
-  const promotePlayersToNext = (playerNames) => {
+  const promotePlayersToNext = useCallback((playerNames) => {
     if (!playerNames || playerNames.length === 0) return;
 
     let currentMaxSince = 0;
@@ -96,11 +93,13 @@ export function useRotation(onSyncRef, resetScoringFn, players, bestOf) {
     });
 
     const newBS = { ...benchSince, ...overrides };
-    setBenchSince(newBS);
+    flushSync(() => {
+      setBenchSince(newBS);
+    });
     onSyncRef.current?.({ benchSince: newBS });
-  };
+  }, [benchSince, onSyncRef, setBenchSince]);
 
-  const startGame = (tA, tB, b) => {
+  const startGame = useCallback((tA, tB, b) => {
     const initGP = {}, initBS = {};
     players.forEach(p => { initGP[p] = 0; initBS[p] = 0; });
     [...tA, ...tB].forEach(p => { initGP[p] = 1; });
@@ -116,9 +115,9 @@ export function useRotation(onSyncRef, resetScoringFn, players, bestOf) {
       bestOf, gamesPlayed: initGP, benchSince: initBS,
       localTimestamp: Date.now()
     };
-  };
+  }, [players, bestOf, resetScoringFn, setTeamA, setTeamB, setBench, setGamesPlayed, setBenchSince, setScreen]);
 
-  const doRotation = (winner) => {
+  const doRotation = useCallback((winner) => {
     const losers = winner === "A" ? [...teamB] : [...teamA];
     const winners = winner === "A" ? [...teamA] : [...teamB];
     const { nextTeamA, nextTeamB, nextBench } = pickNextFour(winners, losers, bench, gamesPlayed, benchSince);
@@ -134,7 +133,7 @@ export function useRotation(onSyncRef, resetScoringFn, players, bestOf) {
       bestOf, gamesPlayed: newGP, benchSince: newBS,
       localTimestamp: Date.now()
     };
-  };
+  }, [teamA, teamB, bench, gamesPlayed, benchSince, bestOf, resetScoringFn, setTeamA, setTeamB, setBench, setGamesPlayed, setBenchSince, setScreen]);
 
   const endSession = useCallback(() => {
     flushSync(() => {

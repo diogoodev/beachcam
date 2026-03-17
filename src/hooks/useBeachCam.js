@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useRef } from "react";
+const savingRef = { current: false };
 import { flushSync } from "react-dom";
 import { liveMatchService } from "../services/supabase";
 import { useMatchScoring } from "./useMatchScoring";
@@ -87,14 +88,16 @@ export function useBeachCam() {
 
   // ── Auto-save match when winner is determined ──
   useEffect(() => {
-    if (scoring.matchWinner && !scoring.matchSaved) {
+    if (scoring.matchWinner && !scoring.matchSaved && !savingRef.current) {
+      savingRef.current = true;
       scoring._setters.setMatchSaved(true);
-      sync.saveMatch(scoring.matchWinner, rotation.teamA, rotation.teamB, scoring.setsA, scoring.setsB);
+      sync.saveMatch(scoring.matchWinner, rotation.teamA, rotation.teamB, scoring.setsA, scoring.setsB)
+        .finally(() => { savingRef.current = false; });
     }
   }, [scoring.matchWinner, scoring.matchSaved, scoring.setsA, scoring.setsB, sync.saveMatch, scoring._setters, rotation.teamA, rotation.teamB]);
 
   // ── Add player mid-game (bridges sync + rotation) ──
-  const addPlayerMidGame = async (name) => {
+  const addPlayerMidGame = useCallback(async (name) => {
     const trimmed = name.trim();
     if (!trimmed || sync.players.includes(trimmed)) return;
 
@@ -116,7 +119,7 @@ export function useBeachCam() {
       gamesPlayed: newGP,
       benchSince: newBS
     });
-  };
+  }, [sync.players, sync.addPlayerToList, rotation.bench, rotation.gamesPlayed, rotation.benchSince, rotation._setters, onSyncRef]);
 
   // ── startGame wrapper (needs to sync directly) ──
   const startGame = (tA, tB, b) => {

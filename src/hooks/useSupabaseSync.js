@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useLocalState } from "./useLocalState";
 import { supabase, playersService, rankingService, matchesService, liveMatchService } from "../services/supabase";
+import { useToast } from "../components/ui/ToastContext";
 
 /**
  * useSupabaseSync — manages all Supabase interactions: data fetching, subscriptions,
  * live match sync, and ranking computations.
  */
 export function useSupabaseSync() {
+  const { showToast } = useToast();
   const [players, setPlayers] = useState([]);
   const [rankingRows, setRankingRows] = useState([]);
   const [matchHistory, setMatchHistory] = useState([]);
@@ -57,6 +59,7 @@ export function useSupabaseSync() {
     } catch (e) {
       console.error("Failed to remove player", e);
       setPlayers(backup);
+      showToast('Erro ao remover jogador', 'error');
     }
   };
 
@@ -70,6 +73,7 @@ export function useSupabaseSync() {
     } catch (e) {
       console.error("Failed to add player", e);
       setPlayers(pl => pl.filter(x => x !== trimmed));
+      showToast('Erro ao adicionar jogador', 'error');
       return false;
     }
   };
@@ -100,11 +104,13 @@ export function useSupabaseSync() {
         })
       ]);
       setSyncStatus("synced");
+      showToast('Partida salva!', 'success', 2000);
     } catch (err) {
       console.error("Failed to save match", err);
       setSyncStatus("error");
+      showToast('Erro ao salvar partida', 'error');
     }
-  }, []);
+  }, [showToast]);
 
   const resetRanking = async () => {
     try {
@@ -114,6 +120,7 @@ export function useSupabaseSync() {
     } catch (err) {
       console.error("Failed to reset ranking", err);
       setSyncStatus("error");
+      showToast('Erro ao resetar ranking', 'error');
     }
   };
 

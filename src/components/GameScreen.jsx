@@ -13,9 +13,9 @@ export function GameScreen({ h }) {
   const [confirmEndSession, setConfirmEndSession] = useState(false);
 
   // ── Remote Control (Smartwatch / Second device) ──
-  const onPointA = useCallback(() => h.addPoint("A"), [h]);
-  const onPointB = useCallback(() => h.addPoint("B"), [h]);
-  const onUndo = useCallback(() => h.undoLastPoint(), [h]);
+  const onPointA = useCallback(() => h.addPoint("A"), [h.addPoint]);
+  const onPointB = useCallback(() => h.addPoint("B"), [h.addPoint]);
+  const onUndo = useCallback(() => h.undoLastPoint(), [h.undoLastPoint]);
 
   const { sessionCode, remoteConnected, lastRemoteAction } = useRemoteControl({
     onPointA, onPointB, onUndo,

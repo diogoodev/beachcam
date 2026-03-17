@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 
 const ToastContext = createContext();
 
@@ -8,14 +8,25 @@ export function useToast() {
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
+  const timersRef = useRef(new Map());
+
+  // Clean up all timers on unmount
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach(timer => clearTimeout(timer));
+      timersRef.current.clear();
+    };
+  }, []);
 
   const showToast = useCallback((message, type = 'info', duration = 3000) => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, message, type }]);
     
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
+      timersRef.current.delete(id);
     }, duration);
+    timersRef.current.set(id, timer);
   }, []);
 
   return (

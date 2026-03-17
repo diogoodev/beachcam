@@ -3,6 +3,17 @@ export const formatTime = () => {
   return `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}:${String(now.getSeconds()).padStart(2,"0")}`;
 };
 
+/**
+ * Shared bench sorting: prioritizes players who have waited the longest,
+ * then by fewest games played.
+ */
+export function sortBenchPlayers(bench, benchSince, gamesPlayed) {
+  return [...bench].sort((a, b) => {
+    const d = (benchSince[b] ?? 0) - (benchSince[a] ?? 0);
+    return d !== 0 ? d : (gamesPlayed[a] ?? 0) - (gamesPlayed[b] ?? 0);
+  });
+}
+
 export function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -13,10 +24,7 @@ export function shuffle(arr) {
 }
 
 export function pickNextFour(winners, losers, bench, gamesPlayed, benchSince) {
-  const sortedBench = [...bench].sort((a, b) => {
-    const d = (benchSince[b] ?? 0) - (benchSince[a] ?? 0);
-    return d !== 0 ? d : (gamesPlayed[a] ?? 0) - (gamesPlayed[b] ?? 0);
-  });
+  const sortedBench = sortBenchPlayers(bench, benchSince, gamesPlayed);
   const [w1, w2] = winners;
   const benchSize = bench.length;
   const winnersCanStay = benchSize < 2 ||

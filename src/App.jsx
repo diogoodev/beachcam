@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useBeachCam } from "./hooks/useBeachCam";
 import { SetupScreen } from "./components/SetupScreen";
 import { GameScreen } from "./components/GameScreen";
@@ -12,6 +12,14 @@ export default function App() {
   const h = useBeachCam();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
+
+  // OBS-2: Handle PWA shortcut URLs (/?action=new, /?action=ranking)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get('action');
+    if (action === 'new') h.setScreen('setup');
+    else if (action === 'ranking') h.setScreen('ranking');
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="min-h-screen text-white select-none relative font-['Outfit']">

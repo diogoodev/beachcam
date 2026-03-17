@@ -16,6 +16,10 @@ export function useBluetoothRemote(onAction, isActive = true) {
   const [lastEvent, setLastEvent] = useState(null); // For diagnostic display
   const [debugMode, setDebugMode] = useState(false);
 
+  // Use ref to avoid stale closure in processClick
+  const onActionRef = useRef(onAction);
+  onActionRef.current = onAction;
+
   const processClick = useCallback(() => {
     clickCount.current += 1;
 
@@ -28,11 +32,11 @@ export function useBluetoothRemote(onAction, isActive = true) {
       clickCount.current = 0;
       clickTimer.current = null;
       
-      if (onAction) {
-        onAction(finalCount);
+      if (onActionRef.current) {
+        onActionRef.current(finalCount);
       }
     }, 400);
-  }, [onAction]);
+  }, []);
 
   // ── Strategy 1: Global window keydown (Android, Desktop, some iOS keyboards) ──
   useEffect(() => {
