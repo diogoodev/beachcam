@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['logoBeachCam.png', 'logoBeachCam.svg', 'logoBeachCam.ico', 'screenshot_mobile.jpg', 'screenshot_desktop.jpg', 'court-bg.jpg'],
+      includeAssets: ['logoBeachCam.png', 'logoBeachCam.svg', 'logoBeachCam.ico', 'screenshot_mobile.jpg', 'screenshot_desktop.jpg', 'court-bg.jpg', 'logoBeachCam-192.png', 'logoBeachCam-512.png'],
       manifest: {
         id: '/?source=pwa',
         start_url: '/?source=pwa',
@@ -18,19 +18,27 @@ export default defineConfig({
         theme_color: '#000000',
         background_color: '#000000',
         display: 'standalone',
+        display_override: ['window-controls-overlay', 'standalone', 'browser'],
+        scope: '/',
         orientation: 'portrait',
         dir: 'ltr',
         lang: 'pt-BR',
         categories: ['sports', 'games', 'entertainment'],
+        launch_handler: {
+          client_mode: 'navigate-existing'
+        },
+        edge_side_panel: {
+          preferred_width: 400
+        },
         icons: [
           {
-            src: 'logoBeachCam.png',
+            src: 'logoBeachCam-192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any maskable'
           },
           {
-            src: 'logoBeachCam.png',
+            src: 'logoBeachCam-512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
