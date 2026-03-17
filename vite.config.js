@@ -8,7 +8,8 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['logoBeachCam.png', 'logoBeachCam.svg', 'logoBeachCam.ico', 'screenshot_mobile.jpg', 'screenshot_desktop.jpg', 'court-bg.jpg', 'logoBeachCam-192.png', 'logoBeachCam-512.png'],
+      injectRegister: 'script',
+      includeAssets: ['logoBeachCam.png', 'logoBeachCam.svg', 'logoBeachCam.ico', 'screenshot_mobile.png', 'screenshot_mobile_1.png', 'screenshot_mobile_2.png', 'screenshot_mobile_3.png', 'screenshot_mobile_4.png', 'screenshot_desktop.png', 'court-bg.jpg', 'logoBeachCam-192.png', 'logoBeachCam-512.png'],
       manifest: {
         id: '/?source=pwa',
         start_url: '/?source=pwa',
@@ -46,11 +47,39 @@ export default defineConfig({
         ],
         screenshots: [
           {
-            src: 'screenshot_mobile.jpg',
-            sizes: '1080x1920',
-            type: 'image/jpeg',
+            src: 'screenshot_mobile.png',
+            sizes: '750x1334',
+            type: 'image/png',
             form_factor: 'narrow',
-            label: 'Tela Inicial BeachCam'
+            label: 'Splash Screen - BeachCam'
+          },
+          {
+            src: 'screenshot_mobile_1.png',
+            sizes: '750x1334',
+            type: 'image/png',
+            form_factor: 'narrow',
+            label: 'Arena Players - Adicionar Jogadores'
+          },
+          {
+            src: 'screenshot_mobile_2.png',
+            sizes: '750x1334',
+            type: 'image/png',
+            form_factor: 'narrow',
+            label: 'Ranking de Jogadores e Duplas'
+          },
+          {
+            src: 'screenshot_mobile_3.png',
+            sizes: '750x1334',
+            type: 'image/png',
+            form_factor: 'narrow',
+            label: 'Status da Partida em Andamento'
+          },
+          {
+            src: 'screenshot_mobile_4.png',
+            sizes: '750x1334',
+            type: 'image/png',
+            form_factor: 'narrow',
+            label: 'Configurações do App'
           },
           {
             src: 'screenshot_desktop.png',
@@ -66,14 +95,14 @@ export default defineConfig({
             short_name: "Novo Jogo",
             description: "Iniciar uma nova partida de Beach Tennis",
             url: "/?action=new",
-            icons: [{ src: "logoBeachCam.png", sizes: "192x192" }]
+            icons: [{ src: "logoBeachCam-192.png", sizes: "192x192", type: "image/png" }]
           },
           {
             name: "Ver Ranking",
             short_name: "Ranking",
             description: "Checar o ranking atualizado",
             url: "/?action=ranking",
-            icons: [{ src: "logoBeachCam.png", sizes: "192x192" }]
+            icons: [{ src: "logoBeachCam-192.png", sizes: "192x192", type: "image/png" }]
           }
         ]
       }
