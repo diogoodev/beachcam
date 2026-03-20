@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getInitials } from '../utils/helpers';
 
-export function SubstitutionSheet({ h, onClose }) {
+export function SubstitutionSheet({ teamA, teamB, sortedBench, substitutePlayer, onClose }) {
   const [selectedOut, setSelectedOut] = useState(null);
   const [selectedIn, setSelectedIn] = useState(null);
 
@@ -12,12 +12,9 @@ export function SubstitutionSheet({ h, onClose }) {
     };
   }, []);
 
-  // Bench sorting logic (shared from hook)
-  const sortedBench = h.sortedBench;
-
   const handleSubstitute = () => {
     if (selectedOut && selectedIn) {
-      h.substitutePlayer(selectedOut, selectedIn);
+      substitutePlayer(selectedOut, selectedIn);
       onClose();
     }
   };
@@ -44,7 +41,7 @@ export function SubstitutionSheet({ h, onClose }) {
               {/* Dupla 1 */}
               <div className="flex flex-col gap-2 bg-white/5 p-3 rounded-2xl border border-[var(--neon-blue)]/20">
                 <div className="text-[9px] text-[var(--neon-blue)] font-bold text-center uppercase tracking-wider">Dupla 1</div>
-                {h.teamA.map(p => (
+                {teamA.map(p => (
                   <button
                     key={`out-${p}`}
                     onClick={() => setSelectedOut(p)}
@@ -61,7 +58,7 @@ export function SubstitutionSheet({ h, onClose }) {
               {/* Dupla 2 */}
               <div className="flex flex-col gap-2 bg-white/5 p-3 rounded-2xl border border-[var(--neon-green)]/20">
                 <div className="text-[9px] text-[var(--neon-green)] font-bold text-center uppercase tracking-wider">Dupla 2</div>
-                {h.teamB.map(p => (
+                {teamB.map(p => (
                   <button
                     key={`out-${p}`}
                     onClick={() => setSelectedOut(p)}

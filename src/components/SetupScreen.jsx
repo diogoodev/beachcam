@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { shuffle } from '../utils/gameLogic';
 
-export function SetupScreen({ h }) {
+export function SetupScreen({ players, addPlayer, removePlayer, teamA, setTeamA, teamB, setTeamB, bench, setBench, startGame }) {
   const [step, setStep] = useState(0);
   const [selectingFor, setSelectingFor] = useState(null);
   const [newPlayer, setNewPlayer] = useState("");
@@ -9,42 +9,42 @@ export function SetupScreen({ h }) {
   const handleAdd = async () => {
     const name = newPlayer.trim();
     if (!name) return;
-    const success = await h.addPlayer(name);
+    const success = await addPlayer(name);
     if (success) setNewPlayer("");
   };
 
   const randomize = () => {
-    if (h.players.length < 4) return;
-    const sh = shuffle(h.players);
-    h.setTeamA(sh.slice(0, 2));
-    h.setTeamB(sh.slice(2, 4));
-    h.setBench(sh.slice(4));
+    if (players.length < 4) return;
+    const sh = shuffle(players);
+    setTeamA(sh.slice(0, 2));
+    setTeamB(sh.slice(2, 4));
+    setBench(sh.slice(4));
   };
 
   const pick = (name) => {
     if (!selectingFor) return;
-    if (selectingFor === "A" && h.teamA.length < 2 && !h.teamA.includes(name)) {
-      const next = [...h.teamA, name];
-      h.setTeamA(next);
-      h.setBench(b => b.filter(p => p !== name));
-      if (next.length === 2 && h.teamB.length < 2) setSelectingFor("B");
+    if (selectingFor === "A" && teamA.length < 2 && !teamA.includes(name)) {
+      const next = [...teamA, name];
+      setTeamA(next);
+      setBench(b => b.filter(p => p !== name));
+      if (next.length === 2 && teamB.length < 2) setSelectingFor("B");
       else if (next.length === 2) setSelectingFor(null);
-    } else if (selectingFor === "B" && h.teamB.length < 2 && !h.teamB.includes(name)) {
-      const next = [...h.teamB, name];
-      h.setTeamB(next);
-      h.setBench(b => b.filter(p => p !== name));
-      if (next.length === 2 && h.teamA.length < 2) setSelectingFor("A");
+    } else if (selectingFor === "B" && teamB.length < 2 && !teamB.includes(name)) {
+      const next = [...teamB, name];
+      setTeamB(next);
+      setBench(b => b.filter(p => p !== name));
+      if (next.length === 2 && teamA.length < 2) setSelectingFor("A");
       else if (next.length === 2) setSelectingFor(null);
     }
   };
 
   const remove = (team, name) => {
     if (team === "A") {
-      h.setTeamA(t => t.filter(p => p !== name));
-      h.setBench(b => [...b, name]);
+      setTeamA(t => t.filter(p => p !== name));
+      setBench(b => [...b, name]);
     } else {
-      h.setTeamB(t => t.filter(p => p !== name));
-      h.setBench(b => [...b, name]);
+      setTeamB(t => t.filter(p => p !== name));
+      setBench(b => [...b, name]);
     }
   };
 
@@ -109,7 +109,7 @@ export function SetupScreen({ h }) {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-20">
-          {h.players.map((p, i) => (
+          {players.map((p, i) => (
             <div 
               key={p} 
               className={`player-card rounded-xl p-3 flex flex-col items-center gap-2 transform hover:scale-105 transition-transform ${i%2 === 0 ? '-rotate-2' : 'rotate-2'}`}
@@ -119,7 +119,7 @@ export function SetupScreen({ h }) {
                   <span className="text-xl sm:text-2xl font-bold">{p[0] && p[0].toUpperCase()}</span>
                 </div>
                 <button 
-                  onClick={() => h.removePlayer(p)}
+                  onClick={() => removePlayer(p)}
                   className="absolute -top-2 -right-1 bg-red-500 rounded-full p-1 shadow-lg hover:scale-110 active:scale-95 transition-transform"
                 >
                   <span className="material-symbols-outlined text-[10px]">close</span>
@@ -135,21 +135,21 @@ export function SetupScreen({ h }) {
             <button 
               onClick={() => {
                 // Fix #4: Clear teams before entering step 1
-                h.setTeamA([]);
-                h.setTeamB([]);
-                h.setBench([...h.players]);
+                setTeamA([]);
+                setTeamB([]);
+                setBench([...players]);
                 setStep(1); 
                 setSelectingFor("A");
               }}
-              disabled={h.players.length < 4}
+              disabled={players.length < 4}
               className={`btn-shimmer w-full py-5 rounded-2xl flex items-center justify-center gap-4 transition-all relative ${
-                h.players.length >= 4 
+                players.length >= 4 
                   ? "bg-[var(--neon-green)] shadow-[0_10px_40px_-10px_rgba(198,255,0,0.5)] active:scale-95 text-black" 
                   : "bg-white/20 text-white/50 cursor-not-allowed pointer-events-none"
               }`}
             >
               <span className="heading-font text-xl font-black italic">MONTAR DUPLAS</span>
-              {h.players.length >= 4 && <span className="material-symbols-outlined text-black font-black text-3xl">bolt</span>}
+              {players.length >= 4 && <span className="material-symbols-outlined text-black font-black text-3xl">bolt</span>}
             </button>
           </div>
         </div>
@@ -184,8 +184,8 @@ export function SetupScreen({ h }) {
         >
           <div className="text-center font-black uppercase text-[var(--neon-green)] mb-4 tracking-widest text-xs">Dupla A</div>
           <div className="flex flex-col gap-8">
-            {renderPlayerCard(h.teamA[0], "var(--neon-green)", "-rotate-3", (p) => remove("A", p))}
-            {renderPlayerCard(h.teamA[1], "var(--neon-green)", "rotate-3 translate-y-2", (p) => remove("A", p))}
+            {renderPlayerCard(teamA[0], "var(--neon-green)", "-rotate-3", (p) => remove("A", p))}
+            {renderPlayerCard(teamA[1], "var(--neon-green)", "rotate-3 translate-y-2", (p) => remove("A", p))}
           </div>
         </div>
 
@@ -196,8 +196,8 @@ export function SetupScreen({ h }) {
         >
           <div className="text-center font-black uppercase text-[var(--neon-blue)] mb-4 tracking-widest text-xs">Dupla B</div>
           <div className="flex flex-col gap-8">
-            {renderPlayerCard(h.teamB[0], "var(--neon-blue)", "-rotate-6", (p) => remove("B", p))}
-            {renderPlayerCard(h.teamB[1], "var(--neon-blue)", "rotate-6 translate-y-2", (p) => remove("B", p))}
+            {renderPlayerCard(teamB[0], "var(--neon-blue)", "-rotate-6", (p) => remove("B", p))}
+            {renderPlayerCard(teamB[1], "var(--neon-blue)", "rotate-6 translate-y-2", (p) => remove("B", p))}
           </div>
         </div>
       </div>
@@ -205,7 +205,7 @@ export function SetupScreen({ h }) {
       <div className="mb-8">
         <div className="text-white/50 text-xs font-bold uppercase tracking-widest mb-3">Banco (Toque para adicionar)</div>
         <div className="flex flex-wrap gap-2">
-          {h.bench.map(p => (
+          {bench.map(p => (
             <button 
               key={p} 
               onClick={() => pick(p)}
@@ -214,7 +214,7 @@ export function SetupScreen({ h }) {
               {p}
             </button>
           ))}
-          {h.bench.length === 0 && <span className="text-white/30 text-sm italic">Nenhum jogador no banco...</span>}
+          {bench.length === 0 && <span className="text-white/30 text-sm italic">Nenhum jogador no banco...</span>}
         </div>
       </div>
 
@@ -226,16 +226,16 @@ export function SetupScreen({ h }) {
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
         <button 
-          disabled={h.teamA.length < 2 || h.teamB.length < 2}
-          onClick={() => h.startGame(h.teamA, h.teamB, h.bench)}
+          disabled={teamA.length < 2 || teamB.length < 2}
+          onClick={() => startGame(teamA, teamB, bench)}
           className={`btn-shimmer flex-1 py-5 rounded-2xl flex items-center justify-center gap-2 transition-all relative ${
-            h.teamA.length === 2 && h.teamB.length === 2
+            teamA.length === 2 && teamB.length === 2
               ? "bg-[var(--neon-blue)] shadow-[0_10px_40px_-10px_rgba(0,245,255,0.5)] active:scale-95 text-black" 
               : "bg-white/20 text-white/50 cursor-not-allowed pointer-events-none"
           }`}
         >
           <span className="heading-font text-xl font-black italic">INICIAR PARTIDA</span>
-          {h.teamA.length === 2 && h.teamB.length === 2 && <span className="material-symbols-outlined font-black text-2xl">sports_tennis</span>}
+          {teamA.length === 2 && teamB.length === 2 && <span className="material-symbols-outlined font-black text-2xl">sports_tennis</span>}
         </button>
       </div>
 

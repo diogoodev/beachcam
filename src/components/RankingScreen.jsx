@@ -3,19 +3,19 @@ import { ShareSheet } from './ShareSheet';
 import { Podium } from './ranking/Podium';
 import { RankingList } from './ranking/RankingList';
 
-export function RankingScreen({ h }) {
+export function RankingScreen({ rankingRows, matchHistory, todayMatches, todayRanking, todayDuoRanking, calculateDuoRanking }) {
   const [tab, setTab] = useState('today'); // 'today' | 'geral'
   const [shareData, setShareData] = useState(null); // { type: 'ranking' | 'match', data: any, isDuo: boolean }
   
   // Choose which data source to use based on tab
-  const playersSource = tab === 'today' ? h.todayRanking : h.rankingRows;
-  const matchSource = tab === 'today' ? h.todayMatches : h.matchHistory;
+  const playersSource = tab === 'today' ? todayRanking : rankingRows;
+  const matchSource = tab === 'today' ? todayMatches : matchHistory;
   
   // Sort players by wins
   const sortedPlayers = [...playersSource].sort((a,b) => b.wins - a.wins);
 
   // Calcula ranking de duplas a partir do matchHistory (fonte única de verdade) usando a função do hook
-  const duoRankings = useMemo(() => h.calculateDuoRanking(matchSource), [matchSource, h.calculateDuoRanking]);
+  const duoRankings = useMemo(() => calculateDuoRanking(matchSource), [matchSource, calculateDuoRanking]);
 
   return (
     <div className="min-h-screen p-4 md:p-6 pb-24 flex flex-col pt-8 text-white relative z-10 w-full max-w-lg mx-auto">

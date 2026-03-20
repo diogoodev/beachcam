@@ -5,7 +5,7 @@ import { ShareSheet } from './ShareSheet';
 import { useRemoteControl } from '../hooks/useRemoteControl';
 import { ConfirmModal } from './ui/ConfirmModal';
 
-export function GameScreen({ h }) {
+export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, pointIdxB, setsA, setsB, setsToWin, teamA, teamB, matchWinner, bench, sortedBench, doRotation, resetMatch, endSession, setScreen, revertSet, substitutePlayer }) {
   const [showSubstitution, setShowSubstitution] = useState(false);
   const [shareMatchData, setShareMatchData] = useState(null);
   const [showRemotePanel, setShowRemotePanel] = useState(false);
@@ -13,22 +13,23 @@ export function GameScreen({ h }) {
   const [confirmEndSession, setConfirmEndSession] = useState(false);
 
   // ── Remote Control (Smartwatch / Second device) ──
-  const onPointA = useCallback(() => h.addPoint("A"), [h.addPoint]);
-  const onPointB = useCallback(() => h.addPoint("B"), [h.addPoint]);
-  const onUndo = useCallback(() => h.undoLastPoint(), [h.undoLastPoint]);
+  const onPointA = useCallback(() => addPoint("A"), [addPoint]);
+  const onPointB = useCallback(() => addPoint("B"), [addPoint]);
+  const onUndo = useCallback(() => undoLastPoint(), [undoLastPoint]);
 
   const { sessionCode, remoteConnected, lastRemoteAction } = useRemoteControl({
     onPointA, onPointB, onUndo,
-    isActive: remoteEnabled && !h.matchWinner,
+    isActive: remoteEnabled && !matchWinner,
   });
 
   // ── MediaSession API (Bluetooth headphones) ──
-  // Use refs so the effect doesn't re-run on every render
-  const hRef = React.useRef(h);
-  React.useEffect(() => { hRef.current = h; });
+  const addPointRef = React.useRef(addPoint);
+  const undoLastPointRef = React.useRef(undoLastPoint);
+  React.useEffect(() => { addPointRef.current = addPoint; }, [addPoint]);
+  React.useEffect(() => { undoLastPointRef.current = undoLastPoint; }, [undoLastPoint]);
 
   useEffect(() => {
-    if (!('mediaSession' in navigator) || h.matchWinner) return;
+    if (!('mediaSession' in navigator) || matchWinner) return;
 
     // Need a silent audio context to enable MediaSession
     const audio = document.createElement('audio');
@@ -47,10 +48,10 @@ export function GameScreen({ h }) {
       artist: 'Controle Remoto',
     });
 
-    navigator.mediaSession.setActionHandler('play', () => hRef.current.addPoint("A"));
-    navigator.mediaSession.setActionHandler('pause', () => hRef.current.addPoint("B"));
-    navigator.mediaSession.setActionHandler('previoustrack', () => hRef.current.undoLastPoint());
-    navigator.mediaSession.setActionHandler('nexttrack', () => hRef.current.addPoint("B"));
+    navigator.mediaSession.setActionHandler('play', () => addPointRef.current("A"));
+    navigator.mediaSession.setActionHandler('pause', () => addPointRef.current("B"));
+    navigator.mediaSession.setActionHandler('previoustrack', () => undoLastPointRef.current());
+    navigator.mediaSession.setActionHandler('nexttrack', () => addPointRef.current("B"));
 
     return () => {
       audio.pause();
@@ -62,10 +63,10 @@ export function GameScreen({ h }) {
       navigator.mediaSession.setActionHandler('previoustrack', null);
       navigator.mediaSession.setActionHandler('nexttrack', null);
     };
-  }, [h.matchWinner]); // Only re-run when match finishes/restarts
+  }, [matchWinner]); // Only re-run when match finishes/restarts
   
-  const currentLabelA   = POINT_LABELS[POINT_SEQUENCE[h.pointIdxA]] ?? "0";
-  const currentLabelB   = POINT_LABELS[POINT_SEQUENCE[h.pointIdxB]] ?? "0";
+  const currentLabelA   = POINT_LABELS[POINT_SEQUENCE[pointIdxA]] ?? "0";
+  const currentLabelB   = POINT_LABELS[POINT_SEQUENCE[pointIdxB]] ?? "0";
 
   // Function to split score into two digits
   const getDigits = (score) => {
@@ -81,7 +82,7 @@ export function GameScreen({ h }) {
 
   // Helper for set dots
   const renderSetDots = (won) => {
-    const dotsCount = h.setsToWin;
+    const dotsCount = setsToWin;
     const dotsText = [];
     for (let i = 0; i < dotsCount; i++) {
         dotsText.push(i < won);
@@ -157,15 +158,15 @@ export function GameScreen({ h }) {
         </div>
       )}
 
-      {h.matchWinner && (
+      {matchWinner && (
         <div className="absolute inset-0 bg-black/80 z-50 flex flex-col items-center justify-center backdrop-blur-sm p-4 text-center">
           <div className="text-6xl mb-4">🏆</div>
           <div className="font-black text-2xl uppercase tracking-widest text-[var(--sand)]">
-            {(h.matchWinner === "A" ? h.teamA : h.teamB).join(" & ")}<br/>
+            {(matchWinner === "A" ? teamA : teamB).join(" & ")}<br/>
             <span className="text-white text-xl">VENCEU!</span>
           </div>
           <div className="font-black text-4xl text-[var(--neon-green)] my-6">
-            {h.setsA} × {h.setsB}
+            {setsA} × {setsB}
           </div>
           <div className="flex flex-col gap-3 w-full max-w-sm mt-2">
             <div className="flex gap-4">
@@ -173,12 +174,12 @@ export function GameScreen({ h }) {
                 className="btn-shimmer flex-[1.5] bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl py-4 font-bold uppercase transition-colors text-sm md:text-base flex items-center justify-center gap-2"
                 onClick={() => {
                   const matchData = {
-                    winner_1: h.matchWinner === "A" ? h.teamA[0] : h.teamB[0],
-                    winner_2: h.matchWinner === "A" ? h.teamA[1] : h.teamB[1],
-                    loser_1: h.matchWinner === "A" ? h.teamB[0] : h.teamA[0],
-                    loser_2: h.matchWinner === "A" ? h.teamB[1] : h.teamA[1],
-                    sets_winner: h.matchWinner === "A" ? h.setsA : h.setsB,
-                    sets_loser: h.matchWinner === "A" ? h.setsB : h.setsA
+                    winner_1: matchWinner === "A" ? teamA[0] : teamB[0],
+                    winner_2: matchWinner === "A" ? teamA[1] : teamB[1],
+                    loser_1: matchWinner === "A" ? teamB[0] : teamA[0],
+                    loser_2: matchWinner === "A" ? teamB[1] : teamA[1],
+                    sets_winner: matchWinner === "A" ? setsA : setsB,
+                    sets_loser: matchWinner === "A" ? setsB : setsA
                   };
                   setShareMatchData(matchData);
                 }}
@@ -188,21 +189,21 @@ export function GameScreen({ h }) {
               </button>
               <button 
                 className="btn-shimmer flex-1 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl py-4 font-bold uppercase transition-colors text-sm md:text-base"
-                onClick={() => h.resetMatch()}
+                onClick={() => resetMatch()}
               >
                 Revanche
               </button>
             </div>
             <button 
               className="btn-shimmer w-full bg-[var(--neon-blue)] text-black rounded-xl py-4 font-black uppercase shadow-[0_0_20px_rgba(0,245,255,0.4)] active:scale-95 transition-all text-sm md:text-base"
-              onClick={() => h.doRotation(h.matchWinner)}
+              onClick={() => doRotation(matchWinner)}
             >
               🔄 Próxima Dupla
             </button>
             <div className="flex gap-3">
               <button 
                 className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 rounded-xl py-3 font-bold uppercase text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5"
-                onClick={() => h.revertSet()}
+                onClick={() => revertSet()}
               >
                 <span className="material-symbols-outlined text-[16px]">history</span>
                 Reverter Set
@@ -226,7 +227,7 @@ export function GameScreen({ h }) {
         confirmText="Encerrar"
         isDestructive={true}
         onConfirm={() => {
-          h.endSession();
+          endSession();
           setConfirmEndSession(false);
         }}
         onCancel={() => setConfirmEndSession(false)}
@@ -252,17 +253,17 @@ export function GameScreen({ h }) {
         <section className="flex flex-col items-center gap-6 relative group">
           <div className="flex flex-col items-center gap-2">
             <h1 className="text-xl md:text-3xl font-black tracking-[0.2em] md:tracking-[0.3em] uppercase opacity-90 text-center px-4 line-clamp-2">
-              {h.teamA.join(" & ")}
+              {teamA.join(" & ")}
             </h1>
             <div className="flex gap-3 relative">
-              {renderSetDots(h.setsA).map((isActive, idx) => (
+              {renderSetDots(setsA).map((isActive, idx) => (
                 <div key={idx} className={`set-dot ${isActive ? 'dot-blue-active' : 'dot-blue'}`}></div>
               ))}
               
               {/* Revert Set Button */}
-              {h.setsA + h.setsB > 0 && !h.matchWinner && (
+              {setsA + setsB > 0 && !matchWinner && (
                 <button
-                  onClick={h.revertSet}
+                  onClick={revertSet}
                   className="absolute -right-10 top-1/2 -translate-y-1/2 p-2 text-white/30 hover:text-[var(--neon-blue)] transition-colors active:scale-90"
                   title="Reverter último set"
                   aria-label="Reverter último set"
@@ -277,9 +278,9 @@ export function GameScreen({ h }) {
               className="digit-block team-blue-block"
               role="button"
               tabIndex={0}
-              aria-label={`Adicionar ponto para ${h.teamA.join(' e ')}. Placar atual: ${currentLabelA}`}
-              onClick={() => h.addPoint("A")}
-              onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && h.addPoint("A")}
+              aria-label={`Adicionar ponto para ${teamA.join(' e ')}. Placar atual: ${currentLabelA}`}
+              onClick={() => addPoint("A")}
+              onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && addPoint("A")}
             >
               <div className="hinge-line"></div>
               <span className="digit-text team-blue-text">{digitsA[0]}</span>
@@ -288,9 +289,9 @@ export function GameScreen({ h }) {
               className="digit-block team-blue-block"
               role="button"
               tabIndex={0}
-              aria-label={`Adicionar ponto para ${h.teamA.join(' e ')}`}
-              onClick={() => h.addPoint("A")}
-              onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && h.addPoint("A")}
+              aria-label={`Adicionar ponto para ${teamA.join(' e ')}`}
+              onClick={() => addPoint("A")}
+              onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && addPoint("A")}
             >
               <div className="hinge-line"></div>
               <span className="digit-text team-blue-text">{digitsA[1]}</span>
@@ -298,9 +299,9 @@ export function GameScreen({ h }) {
             
             {/* Undo button (appears inside block on active interaction, or floats beside) */}
             <button 
-               onClick={(e) => { e.stopPropagation(); h.removePoint("A"); }}
+               onClick={(e) => { e.stopPropagation(); removePoint("A"); }}
                className="absolute -right-4 -bottom-4 bg-black/80 border border-white/20 text-white p-3 rounded-full flex items-center justify-center opacity-30 hover:opacity-100 active:scale-95 transition-all z-20 backdrop-blur-md"
-               aria-label={`Desfazer ponto da dupla ${h.teamA.join(' e ')}`}
+               aria-label={`Desfazer ponto da dupla ${teamA.join(' e ')}`}
                title="Desfazer Ponto"
             >
               <span className="material-symbols-outlined font-black text-xl">undo</span>
@@ -315,9 +316,9 @@ export function GameScreen({ h }) {
               className="digit-block team-green-block"
               role="button"
               tabIndex={0}
-              aria-label={`Adicionar ponto para ${h.teamB.join(' e ')}. Placar atual: ${currentLabelB}`}
-              onClick={() => h.addPoint("B")}
-              onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && h.addPoint("B")}
+              aria-label={`Adicionar ponto para ${teamB.join(' e ')}. Placar atual: ${currentLabelB}`}
+              onClick={() => addPoint("B")}
+              onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && addPoint("B")}
             >
               <div className="hinge-line"></div>
               <span className="digit-text team-green-text">{digitsB[0]}</span>
@@ -326,9 +327,9 @@ export function GameScreen({ h }) {
               className="digit-block team-green-block"
               role="button"
               tabIndex={0}
-              aria-label={`Adicionar ponto para ${h.teamB.join(' e ')}`}
-              onClick={() => h.addPoint("B")}
-              onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && h.addPoint("B")}
+              aria-label={`Adicionar ponto para ${teamB.join(' e ')}`}
+              onClick={() => addPoint("B")}
+              onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && addPoint("B")}
             >
               <div className="hinge-line"></div>
               <span className="digit-text team-green-text">{digitsB[1]}</span>
@@ -336,9 +337,9 @@ export function GameScreen({ h }) {
 
             {/* Undo button */}
             <button 
-               onClick={(e) => { e.stopPropagation(); h.removePoint("B"); }}
+               onClick={(e) => { e.stopPropagation(); removePoint("B"); }}
                className="absolute -left-4 -bottom-4 bg-black/80 border border-white/20 text-white p-3 rounded-full flex items-center justify-center opacity-30 hover:opacity-100 active:scale-95 transition-all z-20 backdrop-blur-md"
-               aria-label={`Desfazer ponto da dupla ${h.teamB.join(' e ')}`}
+               aria-label={`Desfazer ponto da dupla ${teamB.join(' e ')}`}
                title="Desfazer Ponto"
             >
               <span className="material-symbols-outlined font-black text-xl">undo</span>
@@ -347,9 +348,9 @@ export function GameScreen({ h }) {
           <div className="flex flex-col items-center gap-2">
             <div className="flex gap-3 relative">
               {/* Revert Set Button */}
-              {h.setsA + h.setsB > 0 && !h.matchWinner && (
+              {setsA + setsB > 0 && !matchWinner && (
                 <button
-                  onClick={h.revertSet}
+                  onClick={revertSet}
                   className="absolute -left-10 top-1/2 -translate-y-1/2 p-2 text-white/30 hover:text-[var(--neon-green)] transition-colors active:scale-90 flex items-center justify-center transform -scale-x-100"
                   title="Reverter último set"
                   aria-label="Reverter último set"
@@ -358,12 +359,12 @@ export function GameScreen({ h }) {
                 </button>
               )}
               
-              {renderSetDots(h.setsB).map((isActive, idx) => (
+              {renderSetDots(setsB).map((isActive, idx) => (
                 <div key={idx} className={`set-dot ${isActive ? 'dot-green-active' : 'dot-green'}`}></div>
               ))}
             </div>
             <h2 className="text-xl md:text-3xl font-black tracking-[0.2em] md:tracking-[0.3em] uppercase opacity-90 text-center px-4 line-clamp-2">
-              {h.teamB.join(" & ")}
+              {teamB.join(" & ")}
             </h2>
           </div>
         </section>
@@ -373,7 +374,7 @@ export function GameScreen({ h }) {
           {/* Button to open Substitution Sheet */}
           <button
             onClick={() => setShowSubstitution(true)}
-            disabled={h.bench.length === 0}
+            disabled={bench.length === 0}
             className="flex-1 bg-[#0a0a0a] border border-white/10 rounded-2xl p-3 flex items-center justify-center gap-2 hover:bg-white/5 transition-all shadow-xl active:scale-95 disabled:opacity-30 disabled:pointer-events-none group"
           >
             <div className="bg-white/5 p-1.5 rounded-lg group-hover:bg-white/10 transition-colors shrink-0">
@@ -384,7 +385,7 @@ export function GameScreen({ h }) {
           
           {/* Next Duo / Bento Card */}
           <button
-            onClick={() => h.setScreen("rotation")}
+            onClick={() => setScreen("rotation")}
             className="flex-[2] bg-[#0a0a0a] border border-white/10 rounded-2xl p-3 flex items-center justify-between group hover:bg-white/5 transition-all shadow-xl active:scale-95 relative overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-[var(--neon-orange)]/0 via-[var(--neon-orange)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -396,11 +397,11 @@ export function GameScreen({ h }) {
               <div className="text-left overflow-hidden flex-1">
                 <div className="text-[var(--neon-orange)] font-black uppercase tracking-wider text-[10px] font-['Outfit'] mb-0.5">Próxima Dupla</div>
                 <div className="text-white text-xs font-medium truncate">
-                  {h.bench.length >= 2 ? (() => {
-                    const next = h.sortedBench.slice(0, 2);
+                  {bench.length >= 2 ? (() => {
+                    const next = sortedBench.slice(0, 2);
                     return `${next[0].split(" ")[0]} & ${next[1].split(" ")[0]}`;
-                  })() : h.bench.length === 1 ? (
-                    <span className="text-white/50 italic">Fila isolada ({h.bench[0].split(" ")[0]})</span>
+                  })() : bench.length === 1 ? (
+                    <span className="text-white/50 italic">Fila isolada ({bench[0].split(" ")[0]})</span>
                   ) : (
                     <span className="text-white/50 italic">Ninguém na fila</span>
                   )}
@@ -414,7 +415,7 @@ export function GameScreen({ h }) {
       </main>
       
       {showSubstitution && (
-        <SubstitutionSheet h={h} onClose={() => setShowSubstitution(false)} />
+        <SubstitutionSheet teamA={teamA} teamB={teamB} sortedBench={sortedBench} substitutePlayer={substitutePlayer} onClose={() => setShowSubstitution(false)} />
       )}
       
       {shareMatchData && (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export function SettingsPanel({ h, onClose }) {
+export function SettingsPanel({ bestOf, setBestOf, setsA, setsB, endSession, resetRanking, onClose }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmEnd, setConfirmEnd] = useState(false);
 
@@ -32,14 +32,14 @@ export function SettingsPanel({ h, onClose }) {
               {[3, 5, 7].map(n => {
                 const newSetsToWin = Math.ceil(n / 2);
                 // Prevent reducing bestOf when both teams already have enough sets to win
-                const wouldEndImmediately = (h.setsA >= newSetsToWin || h.setsB >= newSetsToWin) && n < h.bestOf;
+                const wouldEndImmediately = (setsA >= newSetsToWin || setsB >= newSetsToWin) && n < bestOf;
                 return (
                   <button 
                     key={n}
-                    onClick={() => !wouldEndImmediately && h.setBestOf(n)}
+                    onClick={() => !wouldEndImmediately && setBestOf(n)}
                     disabled={wouldEndImmediately}
                     className={`flex-1 py-3 rounded-lg font-bold text-xs uppercase transition-all ${
-                      h.bestOf === n 
+                      bestOf === n 
                         ? "bg-[var(--neon-blue)] text-black shadow-lg" 
                         : wouldEndImmediately
                           ? "text-white/20 cursor-not-allowed"
@@ -71,7 +71,7 @@ export function SettingsPanel({ h, onClose }) {
             ) : (
               <div className="flex gap-2">
                 <button 
-                  onClick={() => { h.endSession(); setConfirmEnd(false); onClose(); }}
+                  onClick={() => { endSession(); setConfirmEnd(false); onClose(); }}
                   className="btn-shimmer flex-[2] bg-red-900/80 hover:bg-red-700 border border-red-500/30 py-4 rounded-xl font-black uppercase tracking-wider text-white transition-colors"
                 >
                   Confirmar Encerramento
@@ -97,7 +97,7 @@ export function SettingsPanel({ h, onClose }) {
             ) : (
               <div className="flex gap-2">
                 <button 
-                  onClick={() => { h.resetRanking(); setConfirmReset(false); onClose(); }}
+                  onClick={() => { resetRanking(); setConfirmReset(false); onClose(); }}
                   className="btn-shimmer flex-[2] bg-red-900/80 hover:bg-red-700 border border-red-500/30 py-4 rounded-xl font-black uppercase tracking-wider text-white transition-colors"
                 >
                   Confirmar Reset Geral

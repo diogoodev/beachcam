@@ -4,7 +4,7 @@ import { ConfirmModal } from './ui/ConfirmModal';
 import { AddPlayerSheet } from './rotation/AddPlayerSheet';
 import { OverrideSheet } from './rotation/OverrideSheet';
 
-export function RotationScreen({ h }) {
+export function RotationScreen({ teamA, teamB, setsA, setsB, bench, sortedBench, gamesPlayed, rankingRows, setScreen, reorderBench, removePlayerFromBench, promotePlayersToNext, addPlayerMidGame, players }) {
   const [showFullBench, setShowFullBench] = useState(false);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
   const [showOverrideSheet, setShowOverrideSheet] = useState(false);
@@ -16,17 +16,17 @@ export function RotationScreen({ h }) {
     if (toIdx < 0 || toIdx >= sortedList.length) return;
     const newOrder = [...sortedList];
     [newOrder[fromIdx], newOrder[toIdx]] = [newOrder[toIdx], newOrder[fromIdx]];
-    h.reorderBench(newOrder);
+    reorderBench(newOrder);
   };
 
-  const sortedBenchDisplay = h.sortedBench;
+  const sortedBenchDisplay = sortedBench;
   const nextDuo = sortedBenchDisplay.slice(0, 2);
 
   let topPlayer = null;
   let topWR = -1;
   let topWinsFallback = -1;
 
-  h.rankingRows.forEach(row => {
+  rankingRows.forEach(row => {
     if (row.games > 0) {
       const wr = Math.round((row.wins / row.games) * 100);
       if (wr > topWR || (wr === topWR && row.wins > topWinsFallback)) {
@@ -42,7 +42,7 @@ export function RotationScreen({ h }) {
       
       {/* Header */}
       <header className="mb-6 flex items-center gap-3">
-        <button onClick={() => h.setScreen("game")} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors flex items-center justify-center backdrop-blur-md">
+        <button onClick={() => setScreen("game")} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors flex items-center justify-center backdrop-blur-md">
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
         <h1 className="text-3xl font-bold tracking-tight">Status da Partida</h1>
@@ -68,7 +68,7 @@ export function RotationScreen({ h }) {
               <div className="flex items-center gap-2">
                 <span className="text-[10px] text-neon-blue font-bold tracking-widest uppercase w-12 opacity-80">Dupla 1</span>
                 <div className="flex avatar-stack">
-                  {h.teamA.map((p, i) => (
+                  {teamA.map((p, i) => (
                     <div key={p} className="w-12 h-12 rounded-full border-[2px] border-[var(--neon-blue)] flex items-center justify-center bg-card text-[var(--neon-blue)] text-sm font-bold shadow-[0_0_15px_rgba(0,245,255,0.2)]" style={{ zIndex: 10 - i }}>
                       {getInitials(p)}
                     </div>
@@ -78,7 +78,7 @@ export function RotationScreen({ h }) {
               <div className="flex items-center gap-2">
                 <span className="text-[10px] text-neon-green font-bold tracking-widest uppercase w-12 opacity-80">Dupla 2</span>
                 <div className="flex avatar-stack">
-                  {h.teamB.map((p, i) => (
+                  {teamB.map((p, i) => (
                     <div key={p} className="w-12 h-12 rounded-full border-[2px] border-[var(--neon-green)] flex items-center justify-center bg-card text-[var(--neon-green)] text-sm font-bold shadow-[0_0_15px_rgba(198,255,0,0.2)]" style={{ zIndex: 10 - i }}>
                       {getInitials(p)}
                     </div>
@@ -90,9 +90,9 @@ export function RotationScreen({ h }) {
             {/* Score in Sets */}
             <div className="flex flex-col items-end">
               <div className="text-5xl text-white tracking-tighter leading-none mb-1 font-black flex items-center gap-1.5 bg-black/50 px-4 py-2 rounded-2xl border border-white/10">
-                <span className="text-[var(--neon-blue)]">{h.setsA}</span>
+                <span className="text-[var(--neon-blue)]">{setsA}</span>
                 <span className="text-2xl text-white/30 mb-1">×</span>
-                <span className="text-[var(--neon-green)]">{h.setsB}</span>
+                <span className="text-[var(--neon-green)]">{setsB}</span>
               </div>
               <div className="text-[10px] text-gray-sub uppercase font-medium tracking-wider mr-2 mt-1">Sets Ganhos</div>
             </div>
@@ -199,7 +199,7 @@ export function RotationScreen({ h }) {
                   </div>
                   <div className="flex gap-2 items-center">
                     <div className="text-[10px] bg-white/10 px-2 py-1 rounded-md text-gray-300 font-bold uppercase tracking-wider">
-                      {h.gamesPlayed[p] || 0} jogos
+                      {gamesPlayed[p] || 0} jogos
                     </div>
                     <button 
                       onClick={() => setConfirmPlayerToRemove(p)}
@@ -220,11 +220,11 @@ export function RotationScreen({ h }) {
       </main>
 
       {showAddPlayer && (
-        <AddPlayerSheet h={h} onClose={() => setShowAddPlayer(false)} sortedBenchDisplay={sortedBenchDisplay} />
+        <AddPlayerSheet players={players} bench={bench} addPlayerMidGame={addPlayerMidGame} onClose={() => setShowAddPlayer(false)} sortedBenchDisplay={sortedBenchDisplay} />
       )}
 
       {showOverrideSheet && (
-        <OverrideSheet h={h} onClose={() => setShowOverrideSheet(false)} sortedBenchDisplay={sortedBenchDisplay} />
+        <OverrideSheet promotePlayersToNext={promotePlayersToNext} onClose={() => setShowOverrideSheet(false)} sortedBenchDisplay={sortedBenchDisplay} />
       )}
       
       <ConfirmModal
@@ -234,7 +234,7 @@ export function RotationScreen({ h }) {
         confirmText="Remover"
         isDestructive={true}
         onConfirm={() => {
-          if (confirmPlayerToRemove) h.removePlayerFromBench(confirmPlayerToRemove);
+          if (confirmPlayerToRemove) removePlayerFromBench(confirmPlayerToRemove);
           setConfirmPlayerToRemove(null);
         }}
         onCancel={() => setConfirmPlayerToRemove(null)}

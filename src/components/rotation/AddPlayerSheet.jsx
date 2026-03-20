@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { getInitials } from '../../utils/helpers';
 
-export function AddPlayerSheet({ h, onClose, sortedBenchDisplay }) {
+export function AddPlayerSheet({ players, bench, addPlayerMidGame, onClose, sortedBenchDisplay }) {
   const [newPlayerName, setNewPlayerName] = useState("");
   const [adding, setAdding] = useState(false);
   const inputRef = useRef(null);
@@ -13,12 +13,12 @@ export function AddPlayerSheet({ h, onClose, sortedBenchDisplay }) {
   const handleAddPlayer = async () => {
     const trimmed = newPlayerName.trim();
     if (!trimmed || adding) return;
-    if (h.players.includes(trimmed)) {
+    if (players.includes(trimmed)) {
       setNewPlayerName("");
       return;
     }
     setAdding(true);
-    await h.addPlayerMidGame(trimmed);
+    await addPlayerMidGame(trimmed);
     setAdding(false);
     onClose();
   };
@@ -52,20 +52,20 @@ export function AddPlayerSheet({ h, onClose, sortedBenchDisplay }) {
           />
           <button
             onClick={handleAddPlayer}
-            disabled={!newPlayerName.trim() || adding || h.players.includes(newPlayerName.trim().toUpperCase())}
+            disabled={!newPlayerName.trim() || adding || players.includes(newPlayerName.trim().toUpperCase())}
             className="btn-shimmer bg-[var(--neon-green)] text-black px-5 py-3 rounded-xl font-black uppercase text-sm active:scale-95 transition-all disabled:opacity-30 disabled:pointer-events-none shadow-[0_0_16px_rgba(198,255,0,0.25)] flex items-center justify-center"
           >
             {adding ? "..." : "Entrar"}
           </button>
         </div>
 
-        {newPlayerName.trim() && h.players.includes(newPlayerName.trim().toUpperCase()) && (
+        {newPlayerName.trim() && players.includes(newPlayerName.trim().toUpperCase()) && (
           <p className="text-red-400 text-xs font-bold mb-4">
             "{newPlayerName.trim().toUpperCase()}" já está na sessão.
           </p>
         )}
 
-        {h.bench.length > 0 && (
+        {bench.length > 0 && (
           <div>
             <div className="text-[10px] text-white/30 font-bold uppercase tracking-widest mb-2">Na fila agora</div>
             <div className="flex flex-wrap gap-2">

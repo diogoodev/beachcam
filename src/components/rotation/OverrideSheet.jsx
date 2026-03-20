@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { getInitials } from '../../utils/helpers';
 
-export function OverrideSheet({ h, onClose, sortedBenchDisplay }) {
+export function OverrideSheet({ promotePlayersToNext, onClose, sortedBenchDisplay }) {
   const [overrideSelection, setOverrideSelection] = useState([]);
 
   const handleToggleOverridePlayer = (player) => {
@@ -14,7 +14,7 @@ export function OverrideSheet({ h, onClose, sortedBenchDisplay }) {
 
   const confirmOverride = () => {
     if (overrideSelection.length > 0) {
-      h.promotePlayersToNext(overrideSelection);
+      promotePlayersToNext(overrideSelection);
     }
     onClose();
   };

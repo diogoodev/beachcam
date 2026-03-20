@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useMemo } from "react";
 import { useLocalState } from "./useLocalState";
 import { POINT_SEQUENCE, POINT_LABELS } from "../utils/constants";
 import { formatTime } from "../utils/gameLogic";
+import { vibrate } from "../utils/helpers";
 
 /**
  * useMatchScoring — manages point tracking, set tracking, match winner detection.
@@ -30,7 +31,7 @@ export function useMatchScoring(onSyncRef) {
       setFlash(null);
       flashTimerRef.current = null;
     }, 700);
-    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(50);
+    vibrate(50);
   }, []);
 
   const lastPointTime = useRef(0);
@@ -83,13 +84,13 @@ export function useMatchScoring(onSyncRef) {
     if (team === "A" && pointIdxA > 0) { nA = pointIdxA - 1; setPointIdxA(nA); }
     if (team === "B" && pointIdxB > 0) { nB = pointIdxB - 1; setPointIdxB(nB); }
     if (nA === pointIdxA && nB === pointIdxB) return;
-    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(30);
+    vibrate(30);
     onSyncRef.current?.({ pointIdxA: nA, pointIdxB: nB });
   }, [matchWinner, pointIdxA, pointIdxB, onSyncRef, setPointIdxA, setPointIdxB]);
 
   const revertSet = useCallback(() => {
     if (setsA + setsB === 0) return;
-    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(50);
+    vibrate(50);
 
     const lastSet = matchSetHistory[matchSetHistory.length - 1];
     if (!lastSet) return;

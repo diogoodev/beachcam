@@ -77,10 +77,33 @@ export default function App() {
 
       {/* ROTEAMENTO DE TELAS */}
       <main className="relative pt-24 pb-32">
-        {h.screen === "setup"    && <SetupScreen h={h} />}
-        {h.screen === "game"     && <GameScreen h={h} />}
-        {h.screen === "ranking"  && <RankingScreen h={h} />}
-        {h.screen === "rotation" && <RotationScreen h={h} />}
+        {h.screen === "setup"    && <SetupScreen 
+          players={h.players} addPlayer={h.addPlayer} removePlayer={h.removePlayer}
+          teamA={h.teamA} setTeamA={h.setTeamA} teamB={h.teamB} setTeamB={h.setTeamB}
+          bench={h.bench} setBench={h.setBench} startGame={h.startGame}
+        />}
+        {h.screen === "game"     && <GameScreen 
+          addPoint={h.addPoint} removePoint={h.removePoint} undoLastPoint={h.undoLastPoint}
+          pointIdxA={h.pointIdxA} pointIdxB={h.pointIdxB}
+          setsA={h.setsA} setsB={h.setsB} setsToWin={h.setsToWin}
+          teamA={h.teamA} teamB={h.teamB} matchWinner={h.matchWinner}
+          bench={h.bench} sortedBench={h.sortedBench}
+          doRotation={h.doRotation} resetMatch={h.resetMatch} endSession={h.endSession}
+          setScreen={h.setScreen} revertSet={h.revertSet} substitutePlayer={h.substitutePlayer}
+        />}
+        {h.screen === "ranking"  && <RankingScreen 
+          rankingRows={h.rankingRows} matchHistory={h.matchHistory}
+          todayMatches={h.todayMatches} todayRanking={h.todayRanking}
+          todayDuoRanking={h.todayDuoRanking} calculateDuoRanking={h.calculateDuoRanking}
+        />}
+        {h.screen === "rotation" && <RotationScreen 
+          teamA={h.teamA} teamB={h.teamB} setsA={h.setsA} setsB={h.setsB}
+          bench={h.bench} sortedBench={h.sortedBench}
+          gamesPlayed={h.gamesPlayed} rankingRows={h.rankingRows}
+          setScreen={h.setScreen} reorderBench={h.reorderBench}
+          removePlayerFromBench={h.removePlayerFromBench} promotePlayersToNext={h.promotePlayersToNext}
+          addPlayerMidGame={h.addPlayerMidGame} players={h.players}
+        />}
       </main>
 
       <ReloadPrompt />
@@ -137,7 +160,12 @@ export default function App() {
         </nav>
       {/* SETTINGS BOTTOM SHEET */}
       {isSettingsOpen && (
-        <SettingsPanel h={h} onClose={() => setIsSettingsOpen(false)} />
+        <SettingsPanel 
+          bestOf={h.bestOf} setBestOf={h.setBestOf}
+          setsA={h.setsA} setsB={h.setsB}
+          endSession={h.endSession} resetRanking={h.resetRanking}
+          onClose={() => setIsSettingsOpen(false)} 
+        />
       )}
     </div>
   );
