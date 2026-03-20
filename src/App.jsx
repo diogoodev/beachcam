@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useBeachCam } from "./hooks/useBeachCam";
-import { SetupScreen } from "./components/SetupScreen";
+import { SessionDashboard } from "./components/SessionDashboard";
 import { GameScreen } from "./components/GameScreen";
 import { RankingScreen } from "./components/RankingScreen";
-import { RotationScreen } from "./components/RotationScreen";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { SplashScreen } from "./components/SplashScreen";
 import { ReloadPrompt } from "./components/ReloadPrompt";
@@ -20,7 +19,7 @@ export default function App() {
     
     // 1. Shortcuts & Actions
     const action = params.get('action');
-    if (action === 'new') h.setScreen('setup');
+    if (action === 'new') h.setScreen('session');
     else if (action === 'ranking') h.setScreen('ranking');
     
     // 2. Share Target parameters
@@ -43,7 +42,7 @@ export default function App() {
       try {
         const urlObj = new URL(route);
         if (urlObj.pathname === '/ranking') h.setScreen('ranking');
-        else if (urlObj.pathname === '/new') h.setScreen('setup');
+        else if (urlObj.pathname === '/new') h.setScreen('session');
       } catch (e) {
         // Fallback caso a route venha apenas como string simples
         if (route.includes('ranking')) h.setScreen('ranking');
@@ -77,15 +76,21 @@ export default function App() {
 
       {/* ROTEAMENTO DE TELAS */}
       <main className="relative pt-24 pb-32">
-        {h.screen === "setup"    && <SetupScreen 
+        {h.screen === "session"  && <SessionDashboard 
           players={h.players} addPlayer={h.addPlayer} removePlayer={h.removePlayer}
           teamA={h.teamA} setTeamA={h.setTeamA} teamB={h.teamB} setTeamB={h.setTeamB}
           bench={h.bench} setBench={h.setBench} startGame={h.startGame}
+          setsA={h.setsA} setsB={h.setsB} sortedBench={h.sortedBench}
+          gamesPlayed={h.gamesPlayed} rankingRows={h.rankingRows}
+          setScreen={h.setScreen} reorderBench={h.reorderBench} endSession={h.endSession}
+          removePlayerFromBench={h.removePlayerFromBench} promotePlayersToNext={h.promotePlayersToNext}
+          addPlayerMidGame={h.addPlayerMidGame}
         />}
         {h.screen === "game"     && <GameScreen 
           addPoint={h.addPoint} removePoint={h.removePoint} undoLastPoint={h.undoLastPoint}
           pointIdxA={h.pointIdxA} pointIdxB={h.pointIdxB}
           setsA={h.setsA} setsB={h.setsB} setsToWin={h.setsToWin}
+          bestOf={h.bestOf} setBestOf={h.setBestOf} cancelMatch={h.cancelMatch}
           teamA={h.teamA} teamB={h.teamB} matchWinner={h.matchWinner}
           bench={h.bench} sortedBench={h.sortedBench}
           doRotation={h.doRotation} resetMatch={h.resetMatch} endSession={h.endSession}
@@ -96,14 +101,6 @@ export default function App() {
           todayMatches={h.todayMatches} todayRanking={h.todayRanking}
           todayDuoRanking={h.todayDuoRanking} calculateDuoRanking={h.calculateDuoRanking}
         />}
-        {h.screen === "rotation" && <RotationScreen 
-          teamA={h.teamA} teamB={h.teamB} setsA={h.setsA} setsB={h.setsB}
-          bench={h.bench} sortedBench={h.sortedBench}
-          gamesPlayed={h.gamesPlayed} rankingRows={h.rankingRows}
-          setScreen={h.setScreen} reorderBench={h.reorderBench}
-          removePlayerFromBench={h.removePlayerFromBench} promotePlayersToNext={h.promotePlayersToNext}
-          addPlayerMidGame={h.addPlayerMidGame} players={h.players}
-        />}
       </main>
 
       <ReloadPrompt />
@@ -111,11 +108,11 @@ export default function App() {
       {/* BOTTOM NAVIGATION (Always visible) */}
       <nav className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 flex justify-around items-center z-50">
         <button 
-          onClick={() => h.setScreen("setup")}
-          className={`flex flex-col items-center gap-1 transition-colors ${h.screen === "setup" ? "text-[var(--neon-blue)]" : "text-white/50 hover:text-white"}`}
+          onClick={() => h.setScreen("session")}
+          className={`flex flex-col items-center gap-1 transition-colors ${h.screen === "session" ? "text-[var(--neon-blue)]" : "text-white/50 hover:text-white"}`}
         >
-          <span className="material-symbols-outlined text-2xl">home</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest">Início</span>
+          <span className="material-symbols-outlined text-2xl">groups</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest">Sessão</span>
         </button>
 
         {/* Live Match / Current Match button */}
@@ -143,14 +140,6 @@ export default function App() {
           </button>
 
           <button 
-            onClick={() => h.setScreen("rotation")}
-            className={`flex flex-col items-center gap-1 transition-colors ${h.screen === "rotation" ? "text-[var(--neon-blue)]" : "text-white/50 hover:text-white"}`}
-          >
-            <span className="material-symbols-outlined text-2xl">dashboard</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest">Status</span>
-          </button>
-
-          <button 
             onClick={() => setIsSettingsOpen(true)}
             className="flex flex-col items-center gap-1 transition-colors text-white/50 hover:text-white"
           >
@@ -161,9 +150,8 @@ export default function App() {
       {/* SETTINGS BOTTOM SHEET */}
       {isSettingsOpen && (
         <SettingsPanel 
-          bestOf={h.bestOf} setBestOf={h.setBestOf}
-          setsA={h.setsA} setsB={h.setsB}
-          endSession={h.endSession} resetRanking={h.resetRanking}
+          players={h.players} removePlayer={h.removePlayer}
+          resetRanking={h.resetRanking}
           onClose={() => setIsSettingsOpen(false)} 
         />
       )}

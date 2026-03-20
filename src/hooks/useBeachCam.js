@@ -30,7 +30,7 @@ export function useBeachCam() {
   useEffect(() => {
     onSyncRef.current = (overrides = {}) => {
       const st = {
-        screen: (rotation.teamA && rotation.teamA.length > 0) ? "game" : "setup",
+        screen: (rotation.teamA && rotation.teamA.length > 0) ? "game" : "session",
         teamA: rotation.teamA, teamB: rotation.teamB, bench: rotation.bench,
         pointIdxA: scoring.pointIdxA, pointIdxB: scoring.pointIdxB,
         setsA: scoring.setsA, setsB: scoring.setsB,
@@ -143,6 +143,26 @@ export function useBeachCam() {
     liveMatchService.sync(st).catch(err => console.error("Failed to sync live match on rotation", err));
   }, [rotation.doRotation, sync.setActiveLiveMatch]);
 
+  const cancelMatch = useCallback(() => {
+    // Dissolve local match state
+    scoring.resetMatch(true);
+    
+    const onCourt = [...rotation.teamA, ...rotation.teamB];
+    const newBench = [...onCourt, ...rotation.bench];
+
+    flushSync(() => {
+      rotation._setters.setTeamA([]);
+      rotation._setters.setTeamB([]);
+      rotation._setters.setBench(newBench);
+      rotation._setters.setScreen("session");
+    });
+    
+    const overrides = {
+      teamA: [], teamB: [], bench: newBench, screen: "session"
+    };
+    onSyncRef.current?.(overrides);
+  }, [rotation.teamA, rotation.teamB, rotation.bench, scoring, rotation._setters, onSyncRef]);
+
   // ── Return the same public API as the original hook ──
   return {
     screen: rotation.screen, setScreen: rotation._setters.setScreen,
@@ -166,6 +186,7 @@ export function useBeachCam() {
     removePlayerFromBench: rotation.removePlayerFromBench,
     reorderBench: rotation.reorderBench,
     revertSet: scoring.revertSet, substitutePlayer: rotation.substitutePlayer,
+    cancelMatch,
     calculateDuoRanking: sync.calculateDuoRanking,
     todayMatches: sync.todayMatches, todayRanking: sync.todayRanking,
     todayDuoRanking: sync.todayDuoRanking, sortedBench: rotation.sortedBench,

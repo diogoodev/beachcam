@@ -4,13 +4,15 @@ import { SubstitutionSheet } from './SubstitutionSheet';
 import { ShareSheet } from './ShareSheet';
 import { useRemoteControl } from '../hooks/useRemoteControl';
 import { ConfirmModal } from './ui/ConfirmModal';
+import { MatchSettingsModal } from './MatchSettingsModal';
 
-export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, pointIdxB, setsA, setsB, setsToWin, teamA, teamB, matchWinner, bench, sortedBench, doRotation, resetMatch, endSession, setScreen, revertSet, substitutePlayer }) {
+export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, pointIdxB, setsA, setsB, setsToWin, bestOf, setBestOf, cancelMatch, teamA, teamB, matchWinner, bench, sortedBench, doRotation, resetMatch, endSession, setScreen, revertSet, substitutePlayer }) {
   const [showSubstitution, setShowSubstitution] = useState(false);
   const [shareMatchData, setShareMatchData] = useState(null);
   const [showRemotePanel, setShowRemotePanel] = useState(false);
   const [remoteEnabled, setRemoteEnabled] = useState(false);
   const [confirmEndSession, setConfirmEndSession] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // ── Remote Control (Smartwatch / Second device) ──
   const onPointA = useCallback(() => addPoint("A"), [addPoint]);
@@ -238,10 +240,24 @@ export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, po
 
       <main className="flex-1 w-full max-w-sm px-4 flex flex-col justify-center gap-10 relative z-10 h-full">
         
+        {/* Match Settings Indicator */}
+        <button 
+          onClick={() => setIsSettingsOpen(true)}
+          className="absolute top-4 left-4 flex items-center gap-1.5 backdrop-blur-md px-2.5 py-1 rounded-full border z-20 bg-black/40 border-white/10 transition-colors hover:bg-white/10"
+          title="Ajustes da Partida"
+        >
+          <span className="material-symbols-outlined text-[14px] text-white/50">
+            settings
+          </span>
+          <span className="text-[9px] uppercase font-bold tracking-widest text-white/50">
+            Ajustes
+          </span>
+        </button>
+
         {/* Remote Control Indicator (tap to open panel) */}
         <button 
           onClick={() => setShowRemotePanel(true)}
-          className={`absolute top-4 right-4 flex items-center gap-1.5 backdrop-blur-md px-2.5 py-1 rounded-full border z-20 ${remoteConnected ? 'bg-[var(--neon-green)]/10 border-[var(--neon-green)]/30' : 'bg-black/40 border-white/10'}`}
+          className={`absolute top-4 right-4 flex items-center gap-1.5 backdrop-blur-md px-2.5 py-1 rounded-full border z-20 ${remoteConnected ? 'bg-[var(--neon-green)]/10 border-[var(--neon-green)]/30' : 'bg-black/40 border-white/10 transition-colors hover:bg-white/10'}`}
           title="Controle Remoto"
         >
           <span className={`material-symbols-outlined text-[14px] ${remoteConnected ? 'text-[var(--neon-green)]' : 'text-[var(--neon-blue)]'} ${remoteEnabled ? 'animate-pulse' : ''}`}>
@@ -427,6 +443,20 @@ export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, po
           data={shareMatchData} 
           isDuo={false} 
           onClose={() => setShareMatchData(null)} 
+        />
+      )}
+
+      {/* Match Settings Modal */}
+      {isSettingsOpen && (
+        <MatchSettingsModal
+          bestOf={bestOf} setBestOf={setBestOf}
+          setsA={setsA} setsB={setsB}
+          teamA={teamA} teamB={teamB}
+          cancelMatch={() => {
+            cancelMatch();
+            setIsSettingsOpen(false);
+          }}
+          onClose={() => setIsSettingsOpen(false)}
         />
       )}
     </div>

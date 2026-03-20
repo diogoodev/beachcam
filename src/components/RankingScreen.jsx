@@ -4,7 +4,7 @@ import { Podium } from './ranking/Podium';
 import { RankingList } from './ranking/RankingList';
 
 export function RankingScreen({ rankingRows, matchHistory, todayMatches, todayRanking, todayDuoRanking, calculateDuoRanking }) {
-  const [tab, setTab] = useState('today'); // 'today' | 'geral'
+  const [tab, setTab] = useState('today'); // 'today' | 'geral' | 'history'
   const [shareData, setShareData] = useState(null); // { type: 'ranking' | 'match', data: any, isDuo: boolean }
   
   // Choose which data source to use based on tab
@@ -38,18 +38,24 @@ export function RankingScreen({ rankingRows, matchHistory, todayMatches, todayRa
         <span className="material-symbols-outlined crown-icon text-4xl mt-2">workspace_premium</span>
         
         {/* Tabs */}
-        <div className="flex bg-black/50 p-1 rounded-full border border-white/10 mt-4 w-full max-w-xs">
+        <div className="flex bg-black/50 p-1 rounded-full border border-white/10 mt-4 w-full max-w-[340px]">
           <button 
             onClick={() => setTab('today')}
-            className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest rounded-full transition-all ${tab === 'today' ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
+            className={`flex-1 py-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest rounded-full transition-all ${tab === 'today' ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
           >
             Hoje
           </button>
           <button 
             onClick={() => setTab('geral')}
-            className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest rounded-full transition-all ${tab === 'geral' ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
+            className={`flex-1 py-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest rounded-full transition-all ${tab === 'geral' ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
           >
             Geral
+          </button>
+          <button 
+            onClick={() => setTab('history')}
+            className={`flex-1 py-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest rounded-full transition-all ${tab === 'history' ? 'bg-white/20 text-white shadow-md' : 'text-white/40 hover:text-white/80'}`}
+          >
+            Histórico
           </button>
         </div>
       </header>
@@ -57,25 +63,30 @@ export function RankingScreen({ rankingRows, matchHistory, todayMatches, todayRa
       <main className="flex flex-col gap-6">
         
         {/* Jogadores Ranking Card */}
-        <section className="bg-card rounded-[2rem] p-4 shadow-2xl border border-white/5">
-          <div className="text-xs font-bold text-neon-green tracking-wide mb-2 px-2">JOGADORES</div>
-          <Podium items={sortedPlayers} isDuo={false} />
-          <RankingList items={sortedPlayers} isDuo={false} />
-        </section>
+        {tab !== 'history' && (
+          <section className="bg-card rounded-[2rem] p-4 shadow-2xl border border-white/5 animate-fadeIn">
+            <div className="text-xs font-bold text-neon-green tracking-wide mb-2 px-2">JOGADORES</div>
+            <Podium items={sortedPlayers} isDuo={false} />
+            <RankingList items={sortedPlayers} isDuo={false} />
+          </section>
+        )}
 
         {/* Duplas Ranking Card */}
-        <section className="bg-card rounded-[2rem] p-4 shadow-2xl border border-white/5">
-          <div className="text-xs font-bold text-neon-orange tracking-wide mb-2 px-2">DUPLAS</div>
-          <Podium items={duoRankings} isDuo={true} />
-          <RankingList items={duoRankings} isDuo={true} />
-        </section>
+        {tab !== 'history' && (
+          <section className="bg-card rounded-[2rem] p-4 shadow-2xl border border-white/5 animate-fadeIn">
+            <div className="text-xs font-bold text-neon-orange tracking-wide mb-2 px-2">DUPLAS</div>
+            <Podium items={duoRankings} isDuo={true} />
+            <RankingList items={duoRankings} isDuo={true} />
+          </section>
+        )}
 
         {/* Historico Card */}
-        <section className="bg-card rounded-[2rem] p-5 shadow-2xl border border-white/5">
-          <div className="text-xs font-bold text-white tracking-wide mb-4">HISTÓRICO DE PARTIDAS</div>
-          {matchSource.length === 0 ? (
-            <div className="text-gray-500 text-sm italic py-2">Nenhuma partida registrada.</div>
-          ) : (
+        {tab === 'history' && (
+          <section className="bg-card rounded-[2rem] p-5 shadow-2xl border border-white/5 animate-fadeIn">
+            <div className="text-xs font-bold text-white tracking-wide mb-4">HISTÓRICO DE PARTIDAS</div>
+            {matchSource.length === 0 ? (
+              <div className="text-gray-500 text-sm italic py-2">Nenhuma partida registrada.</div>
+            ) : (
             <div className="flex flex-col gap-3">
               {matchSource.map((m, i) => (
                 <div key={m.id ?? i} className="flex justify-between items-center bg-white/5 p-3 rounded-2xl border border-white/5 relative group">
@@ -108,7 +119,8 @@ export function RankingScreen({ rankingRows, matchHistory, todayMatches, todayRa
               ))}
             </div>
           )}
-        </section>
+          </section>
+        )}
 
       </main>
       

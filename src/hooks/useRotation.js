@@ -12,7 +12,7 @@ import { pickNextFour, updateStats, sortBenchPlayers } from "../utils/gameLogic"
  * @returns rotation state and actions
  */
 export function useRotation(onSyncRef, resetScoringFn, players, bestOf) {
-  const [screen, setScreen] = useLocalState("bc_screen", "setup");
+  const [screen, setScreen] = useLocalState("bc_screen", "session");
   const [teamA, setTeamA] = useLocalState("bc_teamA", []);
   const [teamB, setTeamB] = useLocalState("bc_teamB", []);
   const [bench, setBench] = useLocalState("bc_bench", []);
@@ -137,13 +137,13 @@ export function useRotation(onSyncRef, resetScoringFn, players, bestOf) {
 
   const endSession = useCallback(() => {
     flushSync(() => {
-      setScreen("setup");
+      setScreen("session");
       setTeamA([]); setTeamB([]); setBench([]);
       setGamesPlayed({}); setBenchSince({});
     });
     resetScoringFn();
     onSyncRef.current?.({
-      screen: "setup",
+      screen: "session",
       teamA: [], teamB: [], bench: [],
       gamesPlayed: {}, benchSince: {},
       pointIdxA: 0, pointIdxB: 0, setsA: 0, setsB: 0,

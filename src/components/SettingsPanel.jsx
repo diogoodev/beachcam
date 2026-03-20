@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
-export function SettingsPanel({ bestOf, setBestOf, setsA, setsB, endSession, resetRanking, onClose }) {
+export function SettingsPanel({ players, removePlayer, resetRanking, onClose }) {
   const [confirmReset, setConfirmReset] = useState(false);
-  const [confirmEnd, setConfirmEnd] = useState(false);
+  const [playerToDelete, setPlayerToDelete] = useState(null);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -25,66 +25,39 @@ export function SettingsPanel({ bestOf, setBestOf, setsA, setsB, endSession, res
         </div>
 
         <div className="flex flex-col gap-6">
-          {/* Match Format */}
-          <section>
-            <h3 className="text-xs font-bold text-gray-sub tracking-widest uppercase mb-3">Formato da Partida</h3>
-            <div className="flex gap-2 bg-white/5 p-1 rounded-xl">
-              {[3, 5, 7].map(n => {
-                const newSetsToWin = Math.ceil(n / 2);
-                // Prevent reducing bestOf when both teams already have enough sets to win
-                const wouldEndImmediately = (setsA >= newSetsToWin || setsB >= newSetsToWin) && n < bestOf;
-                return (
-                  <button 
-                    key={n}
-                    onClick={() => !wouldEndImmediately && setBestOf(n)}
-                    disabled={wouldEndImmediately}
-                    className={`flex-1 py-3 rounded-lg font-bold text-xs uppercase transition-all ${
-                      bestOf === n 
-                        ? "bg-[var(--neon-blue)] text-black shadow-lg" 
-                        : wouldEndImmediately
-                          ? "text-white/20 cursor-not-allowed"
-                          : "text-white/50 hover:text-white"
-                    }`}
-                  >
-                    Melhor de {n}
-                  </button>
-                );
-              })}
+          {/* DB Management */}
+          <section className="flex flex-col gap-3">
+            <h3 className="text-xs font-bold text-gray-sub tracking-widest uppercase mb-3 text-[var(--neon-blue)]">Gestão de Jogadores</h3>
+            <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden max-h-[30vh] overflow-y-auto">
+              {players.length === 0 ? (
+                <div className="p-4 text-center text-white/50 text-xs">Nenhum jogador no banco de dados.</div>
+              ) : (
+                players.map(p => (
+                  <div key={p} className="flex items-center justify-between p-3 border-b border-white/5 last:border-0 group hover:bg-white/5 transition-colors">
+                    <span className="font-bold text-sm">{p}</span>
+                    {playerToDelete === p ? (
+                      <div className="flex gap-2">
+                        <button onClick={() => { removePlayer(p); setPlayerToDelete(null); }} className="text-xs bg-red-500/20 text-red-400 px-3 py-1 rounded-lg font-bold">Confirmar</button>
+                        <button onClick={() => setPlayerToDelete(null)} className="text-xs bg-white/10 text-white px-3 py-1 rounded-lg">Cancelar</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setPlayerToDelete(p)} className="text-white/30 hover:text-red-400 transition-colors p-1">
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
+            <p className="text-[10px] text-white/40 text-center uppercase tracking-widest mt-1">Excluir removerá o jogador do banco de dados.</p>
           </section>
 
           <div className="h-px bg-white/5 w-full"></div>
 
           {/* Session Actions */}
           <section className="flex flex-col gap-3">
-            <h3 className="text-xs font-bold text-gray-sub tracking-widest uppercase mb-1">Ações</h3>
+            <h3 className="text-xs font-bold text-gray-sub tracking-widest uppercase mb-1">Sistema</h3>
             
-            {/* End Session */}
-            {!confirmEnd ? (
-              <button 
-                onClick={() => setConfirmEnd(true)}
-                className="btn-shimmer w-full bg-white/5 hover:bg-white/10 border border-white/10 py-4 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors text-red-400"
-              >
-                <span className="material-symbols-outlined">logout</span>
-                Encerrar Sessão Atual
-              </button>
-            ) : (
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => { endSession(); setConfirmEnd(false); onClose(); }}
-                  className="btn-shimmer flex-[2] bg-red-900/80 hover:bg-red-700 border border-red-500/30 py-4 rounded-xl font-black uppercase tracking-wider text-white transition-colors"
-                >
-                  Confirmar Encerramento
-                </button>
-                <button 
-                  onClick={() => setConfirmEnd(false)}
-                  className="flex-1 bg-white/10 py-4 rounded-xl font-bold uppercase transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
-            )}
-
             {/* Reset Ranking */}
             {!confirmReset ? (
               <button 
