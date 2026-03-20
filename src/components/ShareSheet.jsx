@@ -7,6 +7,7 @@ export function ShareSheet({ type, data, isDuo = false, duoData = [], onClose })
   const [previewUrl, setPreviewUrl] = useState(null);
   const [blob, setBlob] = useState(null);
   const [isGenerating, setIsGenerating] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const prevUrlRef = React.useRef(null);
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export function ShareSheet({ type, data, isDuo = false, duoData = [], onClose })
     }
     
     setIsGenerating(true);
+    setHasError(false);
 
     const generate = async () => {
       let newBlob = null;
@@ -41,12 +43,19 @@ export function ShareSheet({ type, data, isDuo = false, duoData = [], onClose })
         setBlob(newBlob);
         setPreviewUrl(url);
         setIsGenerating(false);
+      } else if (active) {
+        // Blob was null — canvas generation failed silently
+        setIsGenerating(false);
+        setHasError(true);
       }
     };
 
     generate().catch(err => {
       console.error("Failed to generate share card", err);
-      if (active) setIsGenerating(false);
+      if (active) {
+        setIsGenerating(false);
+        setHasError(true);
+      }
     });
     return () => {
       active = false;
@@ -148,6 +157,11 @@ export function ShareSheet({ type, data, isDuo = false, duoData = [], onClose })
           {isGenerating ? (
             <div className="absolute inset-0 bg-white/5 flex items-center justify-center border border-white/10">
               <div className="w-8 h-8 rounded-full border-2 border-[var(--neon-blue)] border-t-transparent animate-spin" />
+            </div>
+          ) : hasError ? (
+            <div className="absolute inset-0 bg-white/5 flex flex-col items-center justify-center border border-red-500/20 gap-2 p-4">
+              <span className="material-symbols-outlined text-red-400 text-3xl">error</span>
+              <span className="text-red-400 text-[10px] font-bold uppercase tracking-wider text-center">Erro ao gerar imagem</span>
             </div>
           ) : (
             <img src={previewUrl} alt="Share Preview" className="w-full h-full object-cover" />

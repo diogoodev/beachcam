@@ -93,6 +93,8 @@ export function useBeachCam() {
   }, [sync.activeLiveMatch, applyRemoteState, rotation._setters]);
 
   // ── Auto-save match when winner is determined ──
+  // NOTE: If unsaveMatch fails (network error) and the match is won again after revert,
+  // there could be two records. This is an accepted low-risk edge case.
   useEffect(() => {
     if (scoring.matchWinner && !scoring.matchSaved && !savingRef.current) {
       savingRef.current = true;
@@ -104,7 +106,7 @@ export function useBeachCam() {
 
   // ── Add player mid-game (bridges sync + rotation) ──
   const addPlayerMidGame = useCallback(async (name) => {
-    const trimmed = name.trim();
+    const trimmed = name.trim().toUpperCase();
     if (!trimmed || sync.players.includes(trimmed)) return;
 
     const success = await sync.addPlayerToList(trimmed);

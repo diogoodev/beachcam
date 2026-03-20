@@ -28,6 +28,9 @@ export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, po
   React.useEffect(() => { addPointRef.current = addPoint; }, [addPoint]);
   React.useEffect(() => { undoLastPointRef.current = undoLastPoint; }, [undoLastPoint]);
 
+  // NOTE: When matchWinner toggles rapidly (win → revert → win), this creates
+  // a new audio element each time. The cleanup function handles pausing/removing,
+  // so there's no real leak — just a brief re-initialization.
   useEffect(() => {
     if (!('mediaSession' in navigator) || matchWinner) return;
 

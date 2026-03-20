@@ -170,7 +170,7 @@ export function useSupabaseSync() {
     setLocalTimestamp(now);
     const st = { ...fullState, localTimestamp: now };
     setActiveLiveMatch(st);
-    liveMatchService.sync(st);
+    liveMatchService.sync(st).catch(err => console.error("Failed to sync live match state", err));
   }, [setLocalTimestamp]);
 
   // ── Ranking Computations ──
@@ -242,7 +242,7 @@ export function useSupabaseSync() {
     }).catch(err => console.error("Failed to fetch live match", err));
 
     const rankCh = supabase.channel("ranking-changes").on("postgres_changes", { event: "*", schema: "public", table: "ranking" }, loadRanking).subscribe();
-    const matchCh = supabase.channel("match-changes").on("postgres_changes", { event: "INSERT", schema: "public", table: "matches" }, loadMatches).subscribe();
+    const matchCh = supabase.channel("match-changes").on("postgres_changes", { event: "*", schema: "public", table: "matches" }, loadMatches).subscribe();
     const playerCh = supabase.channel("player-changes").on("postgres_changes", { event: "*", schema: "public", table: "players" }, loadPlayers).subscribe();
     const liveCh = supabase.channel("live-match-changes").on("postgres_changes", { event: "UPDATE", schema: "public", table: "live_match", filter: "id=eq.1" }, (p) => {
       if (handleRemoteUpdateRef.current) {

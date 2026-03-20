@@ -46,10 +46,18 @@ export function pickNextFour(winners, losers, bench, gamesPlayed, benchSince) {
     } else {
       // Combine bench + winners as available pool, sorted by wait time
       const pool = [...sortedBench, ...([...winners].sort((a, b) => (benchSince[b] ?? 0) - (benchSince[a] ?? 0)))];
-      nextTeamA = [pool[0] ?? losers[0], losers[0]];
-      nextTeamB = [pool[1] ?? losers[1], losers[1]];
-      // Remove any remaining pool members that ended up in teams
-      nextBench = pool.slice(2);
+      // Build teams from pool + losers without duplicates
+      const allAvailable = [...pool, ...losers];
+      const used = new Set();
+      const pickUnique = () => {
+        for (const p of allAvailable) {
+          if (p && !used.has(p)) { used.add(p); return p; }
+        }
+        return null;
+      };
+      nextTeamA = [pickUnique(), pickUnique()].filter(Boolean);
+      nextTeamB = [pickUnique(), pickUnique()].filter(Boolean);
+      nextBench = allAvailable.filter(p => p && !used.has(p));
     }
   }
   // Filter out undefined values and deduplicate
