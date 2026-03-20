@@ -125,14 +125,14 @@ export function useBeachCam() {
   const startGame = useCallback((tA, tB, b) => {
     const st = rotation.startGame(tA, tB, b);
     sync.setActiveLiveMatch(st);
-    liveMatchService.sync(st);
+    liveMatchService.sync(st).catch(err => console.error("Failed to sync live match on start", err));
   }, [rotation.startGame, sync.setActiveLiveMatch]);
 
   // ── doRotation wrapper ──
   const doRotation = useCallback((winner) => {
     const st = rotation.doRotation(winner);
     sync.setActiveLiveMatch(st);
-    liveMatchService.sync(st);
+    liveMatchService.sync(st).catch(err => console.error("Failed to sync live match on rotation", err));
   }, [rotation.doRotation, sync.setActiveLiveMatch]);
 
   // ── Return the same public API as the original hook ──

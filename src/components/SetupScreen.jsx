@@ -6,14 +6,15 @@ export function SetupScreen({ h }) {
   const [selectingFor, setSelectingFor] = useState(null);
   const [newPlayer, setNewPlayer] = useState("");
 
-  const handleAdd = () => {
-    if (newPlayer.trim()) {
-      h.addPlayer(newPlayer.trim());
-      setNewPlayer("");
-    }
+  const handleAdd = async () => {
+    const name = newPlayer.trim();
+    if (!name) return;
+    const success = await h.addPlayer(name);
+    if (success) setNewPlayer("");
   };
 
   const randomize = () => {
+    if (h.players.length < 4) return;
     const sh = shuffle(h.players);
     h.setTeamA(sh.slice(0, 2));
     h.setTeamB(sh.slice(2, 4));
@@ -22,13 +23,13 @@ export function SetupScreen({ h }) {
 
   const pick = (name) => {
     if (!selectingFor) return;
-    if (selectingFor === "A" && h.teamA.length < 2) {
+    if (selectingFor === "A" && h.teamA.length < 2 && !h.teamA.includes(name)) {
       const next = [...h.teamA, name];
       h.setTeamA(next);
       h.setBench(b => b.filter(p => p !== name));
       if (next.length === 2 && h.teamB.length < 2) setSelectingFor("B");
       else if (next.length === 2) setSelectingFor(null);
-    } else if (selectingFor === "B" && h.teamB.length < 2) {
+    } else if (selectingFor === "B" && h.teamB.length < 2 && !h.teamB.includes(name)) {
       const next = [...h.teamB, name];
       h.setTeamB(next);
       h.setBench(b => b.filter(p => p !== name));

@@ -199,12 +199,21 @@ export function GameScreen({ h }) {
             >
               🔄 Próxima Dupla
             </button>
-            <button 
-              className="btn-shimmer w-full bg-red-600/80 hover:bg-red-600 text-white rounded-xl py-3 font-bold uppercase border border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.3)] active:scale-95 transition-all text-xs md:text-sm tracking-widest mt-1"
-              onClick={() => setConfirmEndSession(true)}
-            >
-              Encerrar Sessão
-            </button>
+            <div className="flex gap-3">
+              <button 
+                className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 rounded-xl py-3 font-bold uppercase text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                onClick={() => h.revertSet()}
+              >
+                <span className="material-symbols-outlined text-[16px]">history</span>
+                Reverter Set
+              </button>
+              <button 
+                className="btn-shimmer flex-1 bg-red-600/80 hover:bg-red-600 text-white rounded-xl py-3 font-bold uppercase border border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.3)] active:scale-95 transition-all text-xs tracking-widest"
+                onClick={() => setConfirmEndSession(true)}
+              >
+                Encerrar Sessão
+              </button>
+            </div>
           </div>
         </div>
       )}

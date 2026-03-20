@@ -90,10 +90,10 @@ export function useRemoteControl({ onPointA, onPointB, onUndo, isActive = false 
       stopSession();
     }
     
+    // Cleanup only if stopSession hasn't already removed the channel
     return () => {
       if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
+        stopSession();
       }
     };
   }, [isActive, startSession, stopSession]);

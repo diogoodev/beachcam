@@ -160,7 +160,13 @@ export function useSupabaseSync() {
       });
     });
     return Object.values(stats)
-      .sort((a, b) => b.wins - a.wins);
+      .sort((a, b) => {
+        if (b.wins !== a.wins) return b.wins - a.wins;
+        // Tiebreak by win rate (higher is better)
+        const wrA = a.games > 0 ? a.wins / a.games : 0;
+        const wrB = b.games > 0 ? b.wins / b.games : 0;
+        return wrB - wrA;
+      });
   }, [todayMatches]);
 
   const calculateDuoRanking = useCallback((matches) => {
@@ -175,8 +181,12 @@ export function useSupabaseSync() {
       stats[loserDuo].games += 1;
     });
     return Object.values(stats)
-      .filter(d => d.wins > 0)
-      .sort((a, b) => b.wins - a.wins);
+      .sort((a, b) => {
+        if (b.wins !== a.wins) return b.wins - a.wins;
+        const wrA = a.games > 0 ? a.wins / a.games : 0;
+        const wrB = b.games > 0 ? b.wins / b.games : 0;
+        return wrB - wrA;
+      });
   }, []);
 
   const todayDuoRanking = useMemo(() => calculateDuoRanking(todayMatches), [todayMatches, calculateDuoRanking]);

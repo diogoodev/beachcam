@@ -50,6 +50,9 @@ export function useMatchScoring(onSyncRef) {
       const sw = pA === "SET" ? "A" : "B";
       const newSA = sw === "A" ? setsA + 1 : setsA;
       const newSB = sw === "B" ? setsB + 1 : setsB;
+      // NOTE: We store pointIdxA/B BEFORE the winning point so that
+      // revertSet can restore the score to the last point before the set ended.
+      // This is intentional: reverting a set means "undo that last point".
       setMatchSetHistory(prev => [...prev, {
         setNum: prev.length + 1, winner: sw,
         labelA: pA === "SET" ? "SET" : POINT_LABELS[POINT_SEQUENCE[pointIdxA]],
@@ -85,7 +88,7 @@ export function useMatchScoring(onSyncRef) {
   }, [matchWinner, pointIdxA, pointIdxB, onSyncRef, setPointIdxA, setPointIdxB]);
 
   const revertSet = useCallback(() => {
-    if (setsA + setsB === 0 || matchWinner !== null) return;
+    if (setsA + setsB === 0) return;
     if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(50);
 
     const lastSet = matchSetHistory[matchSetHistory.length - 1];
@@ -94,6 +97,7 @@ export function useMatchScoring(onSyncRef) {
     const newSA = lastSet.winner === "A" ? setsA - 1 : setsA;
     const newSB = lastSet.winner === "B" ? setsB - 1 : setsB;
     const newHistory = matchSetHistory.slice(0, -1);
+    // Restore point indices to the state BEFORE the set-winning point
     const restoredIdxA = lastSet.pointIdxA ?? 0;
     const restoredIdxB = lastSet.pointIdxB ?? 0;
 
@@ -102,8 +106,14 @@ export function useMatchScoring(onSyncRef) {
     setMatchSetHistory(newHistory);
     setGameLog(prev => [{ time: formatTime(), team: "system", type: "revert_set" }, ...prev].slice(0, 50));
 
-    onSyncRef.current?.({ setsA: newSA, setsB: newSB, pointIdxA: restoredIdxA, pointIdxB: restoredIdxB });
-  }, [setsA, setsB, matchWinner, matchSetHistory, onSyncRef, setSetsA, setSetsB, setPointIdxA, setPointIdxB, setMatchSetHistory, setGameLog]);
+    // If the match had ended, clear the winner so the game can continue
+    if (matchWinner !== null) {
+      setMatchWinner(null);
+      setMatchSaved(false);
+    }
+
+    onSyncRef.current?.({ setsA: newSA, setsB: newSB, pointIdxA: restoredIdxA, pointIdxB: restoredIdxB, matchWinner: null });
+  }, [setsA, setsB, matchWinner, matchSetHistory, onSyncRef, setSetsA, setSetsB, setPointIdxA, setPointIdxB, setMatchSetHistory, setGameLog, setMatchWinner, setMatchSaved]);
 
   const resetMatch = useCallback((sync = true) => {
     setPointIdxA(0); setPointIdxB(0); setSetsA(0); setSetsB(0);
@@ -120,16 +130,16 @@ export function useMatchScoring(onSyncRef) {
     if (idx === -1) return;
     
     const lastEvent = gameLog[idx];
+    const team = lastEvent.team;
     
-    // Remove the log entry FIRST to prevent duplicate undo
+    // Guard: only undo if the score can actually be decremented
+    if (team === "A" && pointIdxA === 0) return;
+    if (team === "B" && pointIdxB === 0) return;
+    
+    // Remove the log entry and revert the point
     setGameLog(prev => prev.filter((_, i) => i !== idx));
-    
-    if (lastEvent.team === "A") {
-      removePoint("A");
-    } else if (lastEvent.team === "B") {
-      removePoint("B");
-    }
-  }, [gameLog, removePoint, setGameLog]);
+    removePoint(team);
+  }, [gameLog, pointIdxA, pointIdxB, removePoint, setGameLog]);
 
   // Setters exposed for applyRemoteState and orchestrator
   const setters = useMemo(() => ({
