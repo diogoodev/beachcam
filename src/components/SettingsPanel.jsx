@@ -29,19 +29,27 @@ export function SettingsPanel({ h, onClose }) {
           <section>
             <h3 className="text-xs font-bold text-gray-sub tracking-widest uppercase mb-3">Formato da Partida</h3>
             <div className="flex gap-2 bg-white/5 p-1 rounded-xl">
-              {[3, 5, 7].map(n => (
-                <button 
-                  key={n}
-                  onClick={() => h.setBestOf(n)}
-                  className={`flex-1 py-3 rounded-lg font-bold text-xs uppercase transition-all ${
-                    h.bestOf === n 
-                      ? "bg-[var(--neon-blue)] text-black shadow-lg" 
-                      : "text-white/50 hover:text-white"
-                  }`}
-                >
-                  Melhor de {n}
-                </button>
-              ))}
+              {[3, 5, 7].map(n => {
+                const newSetsToWin = Math.ceil(n / 2);
+                // Prevent reducing bestOf when both teams already have enough sets to win
+                const wouldEndImmediately = (h.setsA >= newSetsToWin || h.setsB >= newSetsToWin) && n < h.bestOf;
+                return (
+                  <button 
+                    key={n}
+                    onClick={() => !wouldEndImmediately && h.setBestOf(n)}
+                    disabled={wouldEndImmediately}
+                    className={`flex-1 py-3 rounded-lg font-bold text-xs uppercase transition-all ${
+                      h.bestOf === n 
+                        ? "bg-[var(--neon-blue)] text-black shadow-lg" 
+                        : wouldEndImmediately
+                          ? "text-white/20 cursor-not-allowed"
+                          : "text-white/50 hover:text-white"
+                    }`}
+                  >
+                    Melhor de {n}
+                  </button>
+                );
+              })}
             </div>
           </section>
 

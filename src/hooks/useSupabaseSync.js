@@ -51,7 +51,7 @@ export function useSupabaseSync() {
 
   // ── Player Management ──
 
-  const removePlayer = async (name) => {
+  const removePlayer = useCallback(async (name) => {
     const backup = [...players];
     try {
       setPlayers(pl => pl.filter(x => x !== name));
@@ -61,9 +61,9 @@ export function useSupabaseSync() {
       setPlayers(backup);
       showToast('Erro ao remover jogador', 'error');
     }
-  };
+  }, [players, showToast]);
 
-  const addPlayerToList = async (name) => {
+  const addPlayerToList = useCallback(async (name) => {
     const trimmed = name.trim();
     if (!trimmed || players.includes(trimmed)) return false;
     try {
@@ -76,7 +76,7 @@ export function useSupabaseSync() {
       showToast('Erro ao adicionar jogador', 'error');
       return false;
     }
-  };
+  }, [players, showToast]);
 
   // ── Match Persistence ──
   const saveMatch = useCallback(async (winner, tA, tB, sa, sb) => {
@@ -112,7 +112,7 @@ export function useSupabaseSync() {
     }
   }, [showToast]);
 
-  const resetRanking = async () => {
+  const resetRanking = useCallback(async () => {
     try {
       await rankingService.reset();
       setRankingRows([]); setMatchHistory([]);
@@ -122,7 +122,7 @@ export function useSupabaseSync() {
       setSyncStatus("error");
       showToast('Erro ao resetar ranking', 'error');
     }
-  };
+  }, [showToast]);
 
   // ── Live Match Sync ──
   const syncState = useCallback((fullState) => {
@@ -160,7 +160,6 @@ export function useSupabaseSync() {
       });
     });
     return Object.values(stats)
-      .filter(p => p.wins > 0)
       .sort((a, b) => b.wins - a.wins);
   }, [todayMatches]);
 

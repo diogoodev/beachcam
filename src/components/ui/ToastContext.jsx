@@ -6,6 +6,8 @@ export function useToast() {
   return useContext(ToastContext);
 }
 
+let toastIdCounter = 0;
+
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
   const timersRef = useRef(new Map());
@@ -19,7 +21,7 @@ export function ToastProvider({ children }) {
   }, []);
 
   const showToast = useCallback((message, type = 'info', duration = 3000) => {
-    const id = Date.now();
+    const id = ++toastIdCounter;
     setToasts(prev => [...prev, { id, message, type }]);
     
     const timer = setTimeout(() => {

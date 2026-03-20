@@ -5,16 +5,18 @@ export function SplashScreen({ onComplete }) {
   // phases: idle (0-1200ms), shoot (1200ms-2400ms), fadeout (2400ms-2800ms)
 
   useEffect(() => {
+    let mounted = true;
     // Atraso inicial para a bola "estourar"
-    const t1 = setTimeout(() => setPhase("shoot"), 1200);
+    const t1 = setTimeout(() => mounted && setPhase("shoot"), 1200);
     // Tempo para começar a desvanecer a tela inteira
-    const t2 = setTimeout(() => setPhase("fadeout"), 2400);
+    const t2 = setTimeout(() => mounted && setPhase("fadeout"), 2400);
     // Termina e desmonta a SplashScreen
     const t3 = setTimeout(() => {
-      if (onComplete) onComplete();
+      if (mounted && onComplete) onComplete();
     }, 2800);
 
     return () => {
+      mounted = false;
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);

@@ -151,18 +151,9 @@ export function ShareSheet({ type, data, isDuo = false, duoData = [], onClose })
           </button>
           
           <button
-            onClick={() => handleShare('native')}
-            disabled={isGenerating}
-            className="flex-1 bg-[#25D366] rounded-2xl py-3 flex flex-col items-center justify-center gap-1 shadow-lg active:scale-95 transition-all text-white disabled:opacity-50"
-          >
-            <span className="material-symbols-outlined text-2xl">chat</span>
-            <span className="text-[10px] font-bold uppercase tracking-wider">Mensagem</span>
-          </button>
-
-          <button
             onClick={() => handleShare('download')}
             disabled={isGenerating}
-            className="flex-[0.8] bg-white/10 border border-white/20 rounded-2xl py-3 flex flex-col items-center justify-center gap-1 hover:bg-white/20 active:scale-95 transition-all text-white disabled:opacity-50"
+            className="flex-1 bg-[#25D366] rounded-2xl py-3 flex flex-col items-center justify-center gap-1 shadow-lg active:scale-95 transition-all text-white disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-2xl">download</span>
             <span className="text-[10px] font-bold uppercase tracking-wider">Salvar</span>

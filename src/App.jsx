@@ -96,11 +96,11 @@ export default function App() {
         </button>
 
         {/* Live Match / Current Match button */}
-        {(h.screen === "game" || (h.teamA && h.teamA.length > 0) || (h.activeLiveMatch && h.activeLiveMatch.screen === "game")) && (
+        {(h.screen === "game" || (Array.isArray(h.teamA) && h.teamA.length > 0) || (h.activeLiveMatch && h.activeLiveMatch.screen === "game")) && (
           <button 
             onClick={() => {
               if (h.screen === "game") return;
-              if (h.teamA && h.teamA.length > 0) h.setScreen("game");
+              if (Array.isArray(h.teamA) && h.teamA.length > 0) h.setScreen("game");
               else h.joinLiveMatch();
             }}
             className={`flex flex-col items-center gap-1 ${h.screen === "game" ? "text-[var(--neon-green)]" : "text-[var(--neon-green)] animate-pulse"}`}

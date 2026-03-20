@@ -44,14 +44,19 @@ export function pickNextFour(winners, losers, bench, gamesPlayed, benchSince) {
       nextTeamA = sortedBench.slice(0, 2); nextTeamB = [...losers];
       nextBench = [...sortedBench.slice(2), ...winners];
     } else {
-      const ws = [...winners].sort((a, b) => (benchSince[b] ?? 0) - (benchSince[a] ?? 0));
-      nextTeamA = [sortedBench[0] ?? ws[0], losers[0]];
-      nextTeamB = [sortedBench[1] ?? ws[1], losers[1]];
-      nextBench = [];
+      // Combine bench + winners as available pool, sorted by wait time
+      const pool = [...sortedBench, ...([...winners].sort((a, b) => (benchSince[b] ?? 0) - (benchSince[a] ?? 0)))];
+      nextTeamA = [pool[0] ?? losers[0], losers[0]];
+      nextTeamB = [pool[1] ?? losers[1], losers[1]];
+      // Remove any remaining pool members that ended up in teams
+      nextBench = pool.slice(2);
     }
   }
-  const playing = new Set([...nextTeamA, ...nextTeamB]);
-  nextBench = [...new Set(nextBench.filter(p => !playing.has(p)))];
+  // Filter out undefined values and deduplicate
+  const playing = new Set([...nextTeamA, ...nextTeamB].filter(Boolean));
+  nextTeamA = nextTeamA.map(p => p).filter(Boolean);
+  nextTeamB = nextTeamB.map(p => p).filter(Boolean);
+  nextBench = [...new Set(nextBench.filter(p => p && !playing.has(p)))];
   return { nextTeamA, nextTeamB, nextBench };
 }
 

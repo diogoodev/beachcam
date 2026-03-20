@@ -1,5 +1,4 @@
 import { useEffect, useCallback, useRef } from "react";
-const savingRef = { current: false };
 import { flushSync } from "react-dom";
 import { liveMatchService } from "../services/supabase";
 import { useMatchScoring } from "./useMatchScoring";
@@ -13,6 +12,7 @@ import { useSupabaseSync } from "./useSupabaseSync";
 export function useBeachCam() {
   // Ref-based sync callback — lets sub-hooks call sync without circular deps
   const onSyncRef = useRef(null);
+  const savingRef = useRef(false);
 
   // ── Sub-hooks ──
   const sync = useSupabaseSync();
@@ -122,18 +122,18 @@ export function useBeachCam() {
   }, [sync.players, sync.addPlayerToList, rotation.bench, rotation.gamesPlayed, rotation.benchSince, rotation._setters, onSyncRef]);
 
   // ── startGame wrapper (needs to sync directly) ──
-  const startGame = (tA, tB, b) => {
+  const startGame = useCallback((tA, tB, b) => {
     const st = rotation.startGame(tA, tB, b);
     sync.setActiveLiveMatch(st);
     liveMatchService.sync(st);
-  };
+  }, [rotation.startGame, sync.setActiveLiveMatch]);
 
   // ── doRotation wrapper ──
-  const doRotation = (winner) => {
+  const doRotation = useCallback((winner) => {
     const st = rotation.doRotation(winner);
     sync.setActiveLiveMatch(st);
     liveMatchService.sync(st);
-  };
+  }, [rotation.doRotation, sync.setActiveLiveMatch]);
 
   // ── Return the same public API as the original hook ──
   return {
