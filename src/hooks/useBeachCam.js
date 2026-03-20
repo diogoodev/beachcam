@@ -12,11 +12,12 @@ import { useSupabaseSync } from "./useSupabaseSync";
 export function useBeachCam() {
   // Ref-based sync callback — lets sub-hooks call sync without circular deps
   const onSyncRef = useRef(null);
+  const onUnsaveRef = useRef(null);
   const savingRef = useRef(false);
 
   // ── Sub-hooks ──
   const sync = useSupabaseSync();
-  const scoring = useMatchScoring(onSyncRef);
+  const scoring = useMatchScoring(onSyncRef, onUnsaveRef);
   const rotation = useRotation(
     onSyncRef,
     () => scoring.resetMatch(false), // resetScoringFn (no sync — orchestrator handles it)
@@ -40,6 +41,11 @@ export function useBeachCam() {
       sync.syncState(st);
     };
   }, [rotation.teamA, rotation.teamB, rotation.bench, scoring.pointIdxA, scoring.pointIdxB, scoring.setsA, scoring.setsB, scoring.matchWinner, scoring.bestOf, rotation.gamesPlayed, rotation.benchSince, sync.syncState]);
+
+  // Keep the unsave ref pointing to the latest unsaveMatch function
+  useEffect(() => {
+    onUnsaveRef.current = sync.unsaveMatch;
+  }, [sync.unsaveMatch]);
 
   // ── Handle remote updates ──
   const applyRemoteState = useCallback((st) => {

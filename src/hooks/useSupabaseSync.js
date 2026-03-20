@@ -112,6 +112,46 @@ export function useSupabaseSync() {
     }
   }, [showToast]);
 
+  // Undo the last saveMatch: delete from DB, revert ranking, update local state
+  const unsaveMatch = useCallback(async () => {
+    try {
+      setSyncStatus("syncing");
+      const deleted = await matchesService.deleteLast();
+      if (!deleted) {
+        setSyncStatus("synced");
+        return;
+      }
+
+      // Revert ranking: decrement wins/games for winners, decrement games for losers
+      const winners = [deleted.winner_1, deleted.winner_2];
+      const losers = [deleted.loser_1, deleted.loser_2];
+
+      const freshRanking = await rankingService.fetchAll();
+
+      await Promise.all([
+        ...winners.map(p => {
+          const existing = freshRanking.find(r => r.player_name === p);
+          if (!existing) return Promise.resolve();
+          return rankingService.upsert(p, Math.max(0, existing.wins - 1), Math.max(0, existing.games - 1));
+        }),
+        ...losers.map(p => {
+          const existing = freshRanking.find(r => r.player_name === p);
+          if (!existing) return Promise.resolve();
+          return rankingService.upsert(p, existing.wins, Math.max(0, existing.games - 1));
+        })
+      ]);
+
+      // Update local matchHistory (remove the first/newest entry)
+      setMatchHistory(prev => prev.slice(1));
+      setSyncStatus("synced");
+      showToast('Partida revertida do histórico', 'success', 2000);
+    } catch (err) {
+      console.error("Failed to unsave match", err);
+      setSyncStatus("error");
+      showToast('Erro ao reverter partida', 'error');
+    }
+  }, [showToast]);
+
   const resetRanking = useCallback(async () => {
     try {
       await rankingService.reset();
@@ -222,7 +262,7 @@ export function useSupabaseSync() {
     // Player management
     removePlayer, addPlayerToList,
     // Match persistence
-    saveMatch, resetRanking,
+    saveMatch, unsaveMatch, resetRanking,
     // Live sync
     syncState, handleRemoteUpdateRef,
     // Ranking computations

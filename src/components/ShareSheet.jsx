@@ -44,7 +44,10 @@ export function ShareSheet({ type, data, isDuo = false, duoData = [], onClose })
       }
     };
 
-    generate();
+    generate().catch(err => {
+      console.error("Failed to generate share card", err);
+      if (active) setIsGenerating(false);
+    });
     return () => {
       active = false;
     };
@@ -55,6 +58,18 @@ export function ShareSheet({ type, data, isDuo = false, duoData = [], onClose })
     
     const file = new File([blob], `beachcam-${type}-${Date.now()}.png`, { type: 'image/png' });
 
+    // "download" button always triggers direct download
+    if (platform === 'download') {
+      const link = document.createElement('a');
+      link.href = previewUrl;
+      link.download = file.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+
+    // "native" button uses Web Share API with fallback to download
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({

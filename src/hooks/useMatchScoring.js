@@ -9,7 +9,7 @@ import { vibrate } from "../utils/helpers";
  * @param {Function} onSyncRef - ref containing callback(overrides) to notify the sync engine
  * @returns match scoring state and actions
  */
-export function useMatchScoring(onSyncRef) {
+export function useMatchScoring(onSyncRef, onUnsaveRef) {
   const [pointIdxA, setPointIdxA] = useLocalState("bc_pointIdxA", 0);
   const [pointIdxB, setPointIdxB] = useLocalState("bc_pointIdxB", 0);
   const [setsA, setSetsA] = useLocalState("bc_setsA", 0);
@@ -110,11 +110,15 @@ export function useMatchScoring(onSyncRef) {
     // If the match had ended, clear the winner so the game can continue
     if (matchWinner !== null) {
       setMatchWinner(null);
+      // If match was already saved to DB, undo it
+      if (matchSaved) {
+        onUnsaveRef.current?.();
+      }
       setMatchSaved(false);
     }
 
     onSyncRef.current?.({ setsA: newSA, setsB: newSB, pointIdxA: restoredIdxA, pointIdxB: restoredIdxB, matchWinner: null });
-  }, [setsA, setsB, matchWinner, matchSetHistory, onSyncRef, setSetsA, setSetsB, setPointIdxA, setPointIdxB, setMatchSetHistory, setGameLog, setMatchWinner, setMatchSaved]);
+  }, [setsA, setsB, matchWinner, matchSaved, matchSetHistory, onSyncRef, onUnsaveRef, setSetsA, setSetsB, setPointIdxA, setPointIdxB, setMatchSetHistory, setGameLog, setMatchWinner, setMatchSaved]);
 
   const resetMatch = useCallback((sync = true) => {
     setPointIdxA(0); setPointIdxB(0); setSetsA(0); setSetsB(0);

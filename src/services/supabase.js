@@ -86,9 +86,24 @@ export const matchesService = {
       winner_1: winTeam[0], winner_2: winTeam[1],
       loser_1:  loseTeam[0], loser_2: loseTeam[1],
       sets_winner: sW, sets_loser: sL,
-    });
+    }).select();
     if (error) throw error;
     return data;
+  },
+  async deleteLast() {
+    // Fetch the most recent match
+    const { data, error: fetchErr } = await supabase
+      .from("matches")
+      .select("id, winner_1, winner_2, loser_1, loser_2")
+      .order("played_at", { ascending: false })
+      .limit(1);
+    if (fetchErr) throw fetchErr;
+    if (!data || data.length === 0) return null;
+    const match = data[0];
+    // Delete it
+    const { error: delErr } = await supabase.from("matches").delete().eq("id", match.id);
+    if (delErr) throw delErr;
+    return match;
   }
 };
 
