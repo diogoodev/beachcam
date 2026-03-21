@@ -2,10 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { ShareSheet } from './ShareSheet';
 import { Podium } from './ranking/Podium';
 import { RankingList } from './ranking/RankingList';
+import { PlayerStatsModal } from './ranking/PlayerStatsModal';
 
 export function RankingScreen({ rankingRows, matchHistory, todayMatches, todayRanking, todayDuoRanking, calculateDuoRanking }) {
   const [tab, setTab] = useState('today'); // 'today' | 'geral' | 'history'
-  const [shareData, setShareData] = useState(null); // { type: 'ranking' | 'match', data: any, isDuo: boolean }
+  const [shareData, setShareData] = useState(null);
+  const [selectedPlayer, setSelectedPlayer] = useState(null); // E-1: head-to-head modal
   
   // Choose which data source to use based on tab
   const playersSource = tab === 'today' ? todayRanking : rankingRows;
@@ -80,8 +82,8 @@ export function RankingScreen({ rankingRows, matchHistory, todayMatches, todayRa
               </div>
             ) : (
               <>
-                <Podium items={sortedPlayers} isDuo={false} />
-                <RankingList items={sortedPlayers} isDuo={false} />
+                <Podium items={sortedPlayers} isDuo={false} onPlayerClick={setSelectedPlayer} />
+                <RankingList items={sortedPlayers} isDuo={false} matchHistory={matchSource} onPlayerClick={setSelectedPlayer} />
               </>
             )}
           </section>
@@ -147,6 +149,15 @@ export function RankingScreen({ rankingRows, matchHistory, todayMatches, todayRa
           isDuo={shareData.isDuo} 
           duoData={shareData.duoData || []}
           onClose={() => setShareData(null)} 
+        />
+      )}
+
+      {/* E-1: Head-to-Head modal */}
+      {selectedPlayer && (
+        <PlayerStatsModal
+          player={selectedPlayer}
+          matchHistory={matchSource}
+          onClose={() => setSelectedPlayer(null)}
         />
       )}
     </div>

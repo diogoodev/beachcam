@@ -59,6 +59,11 @@ export function ShareSheet({ type, data, isDuo = false, duoData = [], onClose })
     });
     return () => {
       active = false;
+      // D-5: Revoke the last URL on unmount (not just on regeneration)
+      if (prevUrlRef.current) {
+        URL.revokeObjectURL(prevUrlRef.current);
+        prevUrlRef.current = null;
+      }
     };
   }, [type, data, isDuo, format, rankingType, duoData]);
 

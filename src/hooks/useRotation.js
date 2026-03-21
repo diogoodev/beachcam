@@ -25,6 +25,8 @@ export function useRotation(onSyncRef, resetScoringFn, players, bestOf) {
 
   const substitutePlayer = useCallback((playerOut, playerIn) => {
     if (!playerOut || !playerIn) return;
+    // D-3: Guard against substituting in a player already on court
+    if (teamA.includes(playerIn) || teamB.includes(playerIn)) return;
 
     const isInTeamA = teamA.includes(playerOut);
     const isInTeamB = teamB.includes(playerOut);

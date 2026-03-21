@@ -19,9 +19,10 @@ export function AddPlayerSheet({ players, bench, addPlayerMidGame, onClose, sort
       return;
     }
     setAdding(true);
-    await addPlayerMidGame(trimmed);
+    const success = await addPlayerMidGame(trimmed);
     setAdding(false);
-    onClose();
+    // D-4: Only close if successful — keeps sheet open if network fails so user sees the error
+    if (success !== false) onClose();
   };
 
   return (

@@ -8,6 +8,10 @@
     --neon-blue: #00F5FF;
     --neon-orange: #FF6B4A;
     --court-orange: #FF8C00;
+    /* C-1: Surface tokens — centralised dark backgrounds */
+    --surface-1: #0a0a0a;
+    --surface-2: #0f0f0f;
+    --surface-card: #111111;
   }
   
   body {

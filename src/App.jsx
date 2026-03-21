@@ -27,16 +27,13 @@ export default function App() {
     const sharedText = params.get('text');
     const sharedUrl = params.get('url');
     if (sharedTitle || sharedText || sharedUrl) {
-      console.log("Recebido via Share Target:", { sharedTitle, sharedText, sharedUrl });
-      // Remove parâmetros da URL para não processar novamente em reload
+      // Remove params from URL to avoid reprocessing on reload
       window.history.replaceState({}, document.title, window.location.pathname);
-      // Aqui poderíamos ter um alert customizado, toast, ou preencher um form.
     }
 
     // 3. Protocol Handler parameters (web+beachcam://...?route=...)
     const route = params.get('route');
     if (route) {
-      console.log("Recebido via Protocol Handler:", route);
       // Ex: route = web+beachcam://ranking -> route estaria apenas como "ranking" devido ao mask na config
       // Mas o navegador costuma passar a URL completa, então podemos precisar fazer um parsing:
       try {
@@ -96,6 +93,7 @@ export default function App() {
           bench={h.bench} sortedBench={h.sortedBench}
           doRotation={h.doRotation} resetMatch={h.resetMatch} endSession={h.endSession}
           setScreen={h.setScreen} revertSet={h.revertSet} substitutePlayer={h.substitutePlayer}
+          matchSetHistory={h.matchSetHistory}
         />}
         {h.screen === "ranking"  && <RankingScreen 
           rankingRows={h.rankingRows} matchHistory={h.matchHistory}

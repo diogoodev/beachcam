@@ -4,6 +4,13 @@ export function MatchSettingsModal({ bestOf, setBestOf, setsA, setsB, teamA, tea
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [confirmEnd, setConfirmEnd] = useState(false);
 
+  const handleBestOfChange = (newBestOf) => {
+    const newSetsToWin = Math.ceil(newBestOf / 2);
+    // D-2: Block if either team already reached the new setsToWin threshold
+    if (setsA >= newSetsToWin || setsB >= newSetsToWin) return;
+    setBestOf(newBestOf);
+  };
+
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => {
@@ -30,18 +37,16 @@ export function MatchSettingsModal({ bestOf, setBestOf, setsA, setsB, teamA, tea
             <h3 className="text-xs font-bold text-gray-sub tracking-widest uppercase mb-3">Formato da Partida</h3>
             <div className="flex gap-2 bg-white/5 p-1 rounded-xl">
               {[3, 5, 7].map(n => {
-                const newSetsToWin = Math.ceil(n / 2);
-                // Prevent reducing bestOf when both teams already have enough sets to win
-                const wouldEndImmediately = (setsA >= newSetsToWin || setsB >= newSetsToWin) && n < bestOf;
+                const wouldBlock = Math.ceil(n / 2) <= setsA || Math.ceil(n / 2) <= setsB;
                 return (
                   <button 
                     key={n}
-                    onClick={() => !wouldEndImmediately && setBestOf(n)}
-                    disabled={wouldEndImmediately}
+                    onClick={() => handleBestOfChange(n)}
+                    disabled={wouldBlock}
                     className={`flex-1 py-4 rounded-lg font-bold text-xs uppercase transition-all ${
                       bestOf === n 
                         ? "bg-[var(--neon-blue)] text-black shadow-lg" 
-                        : wouldEndImmediately
+                        : wouldBlock
                           ? "text-white/20 cursor-not-allowed"
                           : "text-white/50 hover:text-white"
                     }`}

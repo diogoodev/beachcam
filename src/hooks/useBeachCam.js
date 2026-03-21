@@ -48,19 +48,23 @@ export function useBeachCam() {
   }, [sync.unsaveMatch]);
 
   // ── Handle remote updates ──
+  // A-3: Use flushSync to apply all remote state atomically — prevents flicker when
+  // a full remote state arrives with 10+ fields (would otherwise cause N re-renders).
   const applyRemoteState = useCallback((st) => {
-    if (st.screen) rotation._setters.setScreen(st.screen);
-    if (st.teamA !== undefined) rotation._setters.setTeamA(st.teamA);
-    if (st.teamB !== undefined) rotation._setters.setTeamB(st.teamB);
-    if (st.bench !== undefined) rotation._setters.setBench(st.bench);
-    if (st.pointIdxA !== undefined) scoring._setters.setPointIdxA(st.pointIdxA);
-    if (st.pointIdxB !== undefined) scoring._setters.setPointIdxB(st.pointIdxB);
-    if (st.setsA !== undefined) scoring._setters.setSetsA(st.setsA);
-    if (st.setsB !== undefined) scoring._setters.setSetsB(st.setsB);
-    if (st.bestOf !== undefined) scoring._setters.setBestOf(st.bestOf);
-    if (st.matchWinner !== undefined) scoring._setters.setMatchWinner(st.matchWinner);
-    if (st.gamesPlayed) rotation._setters.setGamesPlayed(st.gamesPlayed);
-    if (st.benchSince) rotation._setters.setBenchSince(st.benchSince);
+    flushSync(() => {
+      if (st.screen) rotation._setters.setScreen(st.screen);
+      if (st.teamA !== undefined) rotation._setters.setTeamA(st.teamA);
+      if (st.teamB !== undefined) rotation._setters.setTeamB(st.teamB);
+      if (st.bench !== undefined) rotation._setters.setBench(st.bench);
+      if (st.pointIdxA !== undefined) scoring._setters.setPointIdxA(st.pointIdxA);
+      if (st.pointIdxB !== undefined) scoring._setters.setPointIdxB(st.pointIdxB);
+      if (st.setsA !== undefined) scoring._setters.setSetsA(st.setsA);
+      if (st.setsB !== undefined) scoring._setters.setSetsB(st.setsB);
+      if (st.bestOf !== undefined) scoring._setters.setBestOf(st.bestOf);
+      if (st.matchWinner !== undefined) scoring._setters.setMatchWinner(st.matchWinner);
+      if (st.gamesPlayed) rotation._setters.setGamesPlayed(st.gamesPlayed);
+      if (st.benchSince) rotation._setters.setBenchSince(st.benchSince);
+    });
   }, [rotation._setters, scoring._setters]);
 
   const handleRemoteUpdate = useCallback((st) => {
@@ -93,11 +97,11 @@ export function useBeachCam() {
   }, [sync.activeLiveMatch, applyRemoteState, rotation._setters]);
 
   // ── Auto-save match when winner is determined ──
-  // NOTE: If unsaveMatch fails (network error) and the match is won again after revert,
-  // there could be two records. This is an accepted low-risk edge case.
+  // A-7: savingRef is set BEFORE setMatchSaved to close the race window where cancelMatch
+  // could arrive between the useState read and the async save starting.
   useEffect(() => {
     if (scoring.matchWinner && !scoring.matchSaved && !savingRef.current) {
-      savingRef.current = true;
+      savingRef.current = true;  // Guard FIRST — before any async
       scoring._setters.setMatchSaved(true);
       sync.saveMatch(scoring.matchWinner, rotation.teamA, rotation.teamB, scoring.setsA, scoring.setsB)
         .finally(() => { savingRef.current = false; });

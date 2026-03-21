@@ -76,7 +76,7 @@ export const rankingService = {
 };
 
 export const matchesService = {
-  async fetchRecent(limit = 30) {
+  async fetchRecent(limit = 100) {
     const { data, error } = await supabase.from("matches").select("*").order("played_at", { ascending: false }).limit(limit);
     if (error) throw error;
     return data || [];
@@ -116,8 +116,7 @@ export const liveMatchService = {
   async sync(state) {
     const { data, error } = await supabase
       .from("live_match")
-      .update({ state, updated_at: new Date().toISOString() })
-      .eq("id", 1);
+      .upsert({ id: 1, state, updated_at: new Date().toISOString() }, { onConflict: "id" });
     if (error) throw error;
     return data;
   }

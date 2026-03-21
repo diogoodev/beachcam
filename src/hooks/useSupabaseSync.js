@@ -81,6 +81,9 @@ export function useSupabaseSync() {
   // ── Match Persistence ──
   const saveMatch = useCallback(async (winner, tA, tB, sa, sb) => {
     setSyncStatus("syncing");
+    // B-3: 10-second abort guard — prevents UI getting stuck in "syncing" on network hang
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10_000);
     try {
       const winTeam = winner === "A" ? tA : tB;
       const loseTeam = winner === "A" ? tB : tA;
@@ -88,9 +91,6 @@ export function useSupabaseSync() {
       const sL = winner === "A" ? sb : sa;
       await matchesService.save(winner, winTeam, loseTeam, sW, sL);
 
-      // We no longer rely on the component closure's `rankingRows`.
-      // We explicitly fetch fresh from Supabase. Next renders will 
-      // see it via the Postgres subscription anyway.
       const freshRanking = await rankingService.fetchAll();
 
       await Promise.all([
@@ -103,12 +103,14 @@ export function useSupabaseSync() {
           return rankingService.upsert(p, existing?.wins ?? 0, (existing?.games ?? 0) + 1);
         })
       ]);
+      clearTimeout(timeoutId);
       setSyncStatus("synced");
       showToast('Partida salva!', 'success', 2000);
     } catch (err) {
+      clearTimeout(timeoutId);
       console.error("Failed to save match", err);
       setSyncStatus("error");
-      showToast('Erro ao salvar partida', 'error');
+      showToast(err.name === 'AbortError' ? 'Timeout ao salvar partida' : 'Erro ao salvar partida', 'error');
     }
   }, [showToast]);
 

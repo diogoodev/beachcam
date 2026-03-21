@@ -54,7 +54,8 @@ export function SettingsPanel({ players, removePlayer, resetRanking, teamA = [],
                         </div>
                       </div>
                     ) : (
-                      <button onClick={() => setPlayerToDelete(p)} className="text-white/30 hover:text-red-400 transition-colors p-1">
+                      // C-2: min 44px touch target for delete
+                      <button onClick={() => setPlayerToDelete(p)} className="text-white/30 hover:text-red-400 transition-colors p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center">
                         <span className="material-symbols-outlined text-[18px]">delete</span>
                       </button>
                     )}

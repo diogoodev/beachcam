@@ -5,8 +5,9 @@ import { ShareSheet } from './ShareSheet';
 import { useRemoteControl } from '../hooks/useRemoteControl';
 import { ConfirmModal } from './ui/ConfirmModal';
 import { MatchSettingsModal } from './MatchSettingsModal';
+import confetti from 'canvas-confetti';
 
-export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, pointIdxB, setsA, setsB, setsToWin, bestOf, setBestOf, cancelMatch, teamA, teamB, matchWinner, bench, sortedBench, doRotation, resetMatch, endSession, setScreen, revertSet, substitutePlayer }) {
+export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, pointIdxB, setsA, setsB, setsToWin, bestOf, setBestOf, cancelMatch, teamA, teamB, matchWinner, bench, sortedBench, doRotation, resetMatch, endSession, setScreen, revertSet, substitutePlayer, matchSetHistory = [] }) {
   const [showSubstitution, setShowSubstitution] = useState(false);
   const [shareMatchData, setShareMatchData] = useState(null);
   const [showRemotePanel, setShowRemotePanel] = useState(false);
@@ -15,6 +16,26 @@ export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, po
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   // UX-8: serve indicator — null = none, 'A' or 'B'
   const [servingTeam, setServingTeam] = useState(null);
+
+  // D-1: Reset serving indicator when a new match starts (matchWinner cleared = new game)
+  useEffect(() => {
+    if (!matchWinner) setServingTeam(null);
+  }, [matchWinner]);
+
+  // E-3: Neon confetti burst on match win
+  useEffect(() => {
+    if (!matchWinner) return;
+    try {
+      confetti({
+        particleCount: 120,
+        spread: 90,
+        origin: { y: 0.5 },
+        colors: ['#00f5ff', '#c6ff00', '#ff6b00', '#ffffff'],
+        gravity: 0.8,
+        scalar: 1.1,
+      });
+    } catch (e) { /* confetti not available */ }
+  }, [matchWinner]);
 
   const toggleServe = (team) => setServingTeam(prev => prev === team ? null : team);
 
@@ -275,9 +296,9 @@ export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, po
         {/* Team 1 (Blue) */}
         <section className="flex flex-col items-center gap-6 relative group">
           <div className="flex flex-col items-center gap-2">
-            <h1 className="text-xl md:text-3xl font-black tracking-[0.2em] md:tracking-[0.3em] uppercase opacity-90 text-center px-4 line-clamp-2">
+            <div className="text-xl md:text-3xl font-black tracking-[0.2em] md:tracking-[0.3em] uppercase opacity-90 text-center px-4 line-clamp-2">
               {teamA.join(" & ")}
-            </h1>
+            </div>
             <div className="flex items-center gap-3 relative">
               {/* UX-8: Serve indicator for Team A */}
               <button
@@ -390,11 +411,27 @@ export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, po
                 🏐
               </button>
             </div>
-            <h2 className="text-xl md:text-3xl font-black tracking-[0.2em] md:tracking-[0.3em] uppercase opacity-90 text-center px-4 line-clamp-2">
+            <div className="text-xl md:text-3xl font-black tracking-[0.2em] md:tracking-[0.3em] uppercase opacity-90 text-center px-4 line-clamp-2">
               {teamB.join(" & ")}
-            </h2>
+            </div>
           </div>
         </section>
+
+        {/* E-5: Set History Strip */}
+        {matchSetHistory && matchSetHistory.length > 0 && (
+          <div className="flex items-center justify-center gap-2 -mt-4">
+            {matchSetHistory.map((s, i) => (
+              <div key={i} className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-full px-2.5 py-1">
+                <span className={`text-[9px] font-black ${s.winner === 'A' ? 'text-[var(--neon-blue)]' : 'text-[var(--neon-green)]'}`}>
+                  S{i + 1}
+                </span>
+                <span className="text-[9px] text-white/40 font-mono">
+                  {s.winner === 'A' ? `${s.labelA}-${s.labelB}` : `${s.labelB}-${s.labelA}`}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Bottom Bar: Action buttons */}
         <div className="flex gap-3 mt-2">

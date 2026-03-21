@@ -1,7 +1,7 @@
 import React from 'react';
 import { getInitials } from '../../utils/helpers';
 
-export function Podium({ items, isDuo = false }) {
+export function Podium({ items, isDuo = false, onPlayerClick }) {
   if (items.length === 0) return <div className="text-gray-500 text-center py-4 italic">Sem dados suficientes</div>;
 
   const first = items[0];
@@ -12,7 +12,10 @@ export function Podium({ items, isDuo = false }) {
     <div className="flex items-end justify-center gap-2 md:gap-4 mb-8 mt-4">
       {/* 2nd Place */}
       {second && (
-        <div className="bg-card border border-white/10 rounded-3xl p-3 flex flex-col items-center flex-1 max-w-28 md:max-w-32 shadow-lg mb-4">
+        <div
+          onClick={() => !isDuo && onPlayerClick?.(second.player_name)}
+          className={`bg-card border border-white/10 rounded-3xl p-3 flex flex-col items-center flex-1 max-w-28 md:max-w-32 shadow-lg mb-4 ${!isDuo ? 'cursor-pointer hover:border-white/30 active:scale-[0.97] transition-all' : ''}`}
+        >
           <div className="text-[9px] text-gray-sub tracking-widest font-bold mb-2 uppercase">2º - {second.wins} Vitórias</div>
           <div className={`flex justify-center ${isDuo ? 'avatar-stack' : ''}`}>
              {isDuo ? second.players.map((p, i) => (
@@ -34,7 +37,10 @@ export function Podium({ items, isDuo = false }) {
 
       {/* 1st Place */}
       {first && (
-        <div className="bg-[#0a0a0a] border border-[var(--neon-green)] rounded-3xl p-4 flex flex-col items-center flex-1 max-w-32 md:max-w-36 shadow-[0_0_25px_rgba(198,255,0,0.15)] relative -translate-y-2">
+        <div
+          onClick={() => !isDuo && onPlayerClick?.(first.player_name)}
+          className={`bg-[#0a0a0a] border border-[var(--neon-green)] rounded-3xl p-4 flex flex-col items-center flex-1 max-w-32 md:max-w-36 shadow-[0_0_25px_rgba(198,255,0,0.15)] relative -translate-y-2 ${!isDuo ? 'cursor-pointer hover:shadow-[0_0_35px_rgba(198,255,0,0.25)] active:scale-[0.97] transition-all' : ''}`}
+        >
           <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-3xl">👑</div>
           <div className="text-[10px] text-[var(--neon-green)] tracking-widest font-bold mb-3 uppercase">1º - {first.wins} Vitórias</div>
           <div className={`flex justify-center ${isDuo ? 'avatar-stack' : ''}`}>
@@ -57,7 +63,10 @@ export function Podium({ items, isDuo = false }) {
 
       {/* 3rd Place */}
       {third && (
-        <div className="bg-card border border-white/10 rounded-3xl p-3 flex flex-col items-center flex-1 max-w-28 md:max-w-32 shadow-lg mb-2">
+        <div
+          onClick={() => !isDuo && onPlayerClick?.(third.player_name)}
+          className={`bg-card border border-white/10 rounded-3xl p-3 flex flex-col items-center flex-1 max-w-28 md:max-w-32 shadow-lg mb-2 ${!isDuo ? 'cursor-pointer hover:border-white/30 active:scale-[0.97] transition-all' : ''}`}
+        >
           <div className="text-[9px] text-gray-sub tracking-widest font-bold mb-2 uppercase">3º - {third.wins} Vitórias</div>
           <div className={`flex justify-center ${isDuo ? 'avatar-stack' : ''}`}>
              {isDuo ? third.players.map((p, i) => (
