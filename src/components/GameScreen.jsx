@@ -412,7 +412,7 @@ export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, po
           
           {/* Next Duo / Bento Card */}
           <button
-            onClick={() => setScreen("rotation")}
+            onClick={() => setScreen("session")}
             className="flex-[2] bg-[#0a0a0a] border border-white/10 rounded-2xl p-3 flex items-center justify-between group hover:bg-white/5 transition-all shadow-xl active:scale-95 relative overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-[var(--neon-orange)]/0 via-[var(--neon-orange)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>

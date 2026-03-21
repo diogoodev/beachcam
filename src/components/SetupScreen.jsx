@@ -13,15 +13,15 @@ export function SetupScreen({ players, addPlayer, removePlayer, teamA, setTeamA,
     if (success) setNewPlayer("");
   };
 
-  // UX-1: Shuffle and jump directly to Step 1 with randomized teams
+  // UX-1: Shuffle and immediately start the game — no Step 1 needed
   const shuffleAndGo = () => {
     if (players.length < 4) return;
     const sh = shuffle(players);
-    setTeamA(sh.slice(0, 2));
-    setTeamB(sh.slice(2, 4));
-    setBench(sh.slice(4));
-    setSelectingFor(null); // no manual picking needed
-    setStep(1);
+    const tA = sh.slice(0, 2);
+    const tB = sh.slice(2, 4);
+    const b = sh.slice(4);
+    // Call startGame directly — this sets screen to 'game' and navigates away
+    startGame(tA, tB, b);
   };
 
   const randomize = () => {
