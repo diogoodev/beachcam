@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 
-export function MatchSettingsModal({ bestOf, setBestOf, setsA, setsB, teamA, teamB, cancelMatch, onClose }) {
+export function MatchSettingsModal({ bestOf, setBestOf, setsA, setsB, teamA, teamB, cancelMatch, endSession, onClose }) {
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [confirmEnd, setConfirmEnd] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -88,6 +89,33 @@ export function MatchSettingsModal({ bestOf, setBestOf, setsA, setsB, teamA, tea
                     Voltar
                   </button>
                 </div>
+              </div>
+            )}
+
+            {/* UX-5: Encerrar Sessão também aqui */}
+            <div className="h-px bg-white/5 w-full"></div>
+            {!confirmEnd ? (
+              <button 
+                onClick={() => setConfirmEnd(true)}
+                className="w-full bg-white/5 hover:bg-white/10 border border-white/10 py-4 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors text-white/40"
+              >
+                <span className="material-symbols-outlined">logout</span>
+                Encerrar Sessão
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => { endSession(); setConfirmEnd(false); onClose(); }}
+                  className="btn-shimmer flex-[2] bg-red-900/80 hover:bg-red-700 border border-red-500/30 py-4 rounded-xl font-black uppercase tracking-wider text-white transition-colors"
+                >
+                  Confirmar Encerramento
+                </button>
+                <button 
+                  onClick={() => setConfirmEnd(false)}
+                  className="flex-1 bg-white/10 py-4 rounded-xl font-bold uppercase transition-colors"
+                >
+                  Cancelar
+                </button>
               </div>
             )}
           </section>

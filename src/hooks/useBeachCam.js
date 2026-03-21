@@ -148,14 +148,15 @@ export function useBeachCam() {
     scoring.resetMatch(true);
     
     const onCourt = [...rotation.teamA, ...rotation.teamB];
-    const newBench = [...onCourt, ...rotation.bench];
+    // UX-11: On-court players go to END of queue (they just played, bench waited)
+    const newBench = [...rotation.bench, ...onCourt];
 
     // Revert gamesPlayed for on-court players (undo the increment from startGame)
     const newGP = { ...rotation.gamesPlayed };
     const newBS = { ...rotation.benchSince };
     for (const p of onCourt) {
       if (newGP[p] > 0) newGP[p] -= 1;
-      // Put them at the front of the bench wait queue
+      // Put them behind existing bench waiters
       newBS[p] = 0;
     }
 

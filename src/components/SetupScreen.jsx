@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { shuffle } from '../utils/gameLogic';
 
-export function SetupScreen({ players, addPlayer, removePlayer, teamA, setTeamA, teamB, setTeamB, bench, setBench, startGame }) {
+export function SetupScreen({ players, addPlayer, removePlayer, teamA, setTeamA, teamB, setTeamB, bench, setBench, startGame, rankingRows = [] }) {
   const [step, setStep] = useState(0);
   const [selectingFor, setSelectingFor] = useState(null);
   const [newPlayer, setNewPlayer] = useState("");
@@ -13,12 +13,30 @@ export function SetupScreen({ players, addPlayer, removePlayer, teamA, setTeamA,
     if (success) setNewPlayer("");
   };
 
+  // UX-1: Shuffle and jump directly to Step 1 with randomized teams
+  const shuffleAndGo = () => {
+    if (players.length < 4) return;
+    const sh = shuffle(players);
+    setTeamA(sh.slice(0, 2));
+    setTeamB(sh.slice(2, 4));
+    setBench(sh.slice(4));
+    setSelectingFor(null); // no manual picking needed
+    setStep(1);
+  };
+
   const randomize = () => {
     if (players.length < 4) return;
     const sh = shuffle(players);
     setTeamA(sh.slice(0, 2));
     setTeamB(sh.slice(2, 4));
     setBench(sh.slice(4));
+  };
+
+  // UX-6: local-only removal during setup — does NOT delete from DB
+  const removeFromSetup = (name) => {
+    setBench(b => b.filter(p => p !== name));
+    setTeamA(t => t.filter(p => p !== name));
+    setTeamB(t => t.filter(p => p !== name));
   };
 
   const pick = (name) => {
@@ -82,13 +100,34 @@ export function SetupScreen({ players, addPlayer, removePlayer, teamA, setTeamA,
   };
 
   // STEP 0: PLAYERS & FORMAT
+  // UX-10: compute top player for highlight card
+  let topPlayerHighlight = null;
+  let topWRHighlight = -1;
+  rankingRows.forEach(row => {
+    if (row.games > 0) {
+      const wr = Math.round((row.wins / row.games) * 100);
+      if (wr > topWRHighlight || (wr === topWRHighlight && row.wins > (topPlayerHighlight?.wins ?? -1))) {
+        topWRHighlight = wr;
+        topPlayerHighlight = row;
+      }
+    }
+  });
+
   if (step === 0) {
     return (
       <div className="px-4 relative z-10">
-        <div className="mb-8">
+        <div className="mb-6 flex items-start justify-between">
           <h2 className="heading-font text-4xl sm:text-5xl font-black mb-2 leading-none text-white drop-shadow-2xl">
             ARENA<br/>PLAYERS
           </h2>
+          {/* UX-10: Highlight card */}
+          {topPlayerHighlight && (
+            <div className="bg-white/5 border border-white/10 rounded-2xl px-3 py-2 flex flex-col items-center gap-0.5 min-w-[72px]">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--neon-green)]">Destaque</span>
+              <span className="text-xs font-black text-white truncate max-w-[60px]">{topPlayerHighlight.player_name.split(' ')[0]}</span>
+              <span className="text-[10px] text-[var(--neon-green)] font-bold">{topWRHighlight}% 🏆</span>
+            </div>
+          )}
         </div>
 
         <div className="glass-input rounded-xl flex items-center p-1 mb-8">
@@ -118,9 +157,11 @@ export function SetupScreen({ players, addPlayer, removePlayer, teamA, setTeamA,
                 <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-black/40 flex items-center justify-center border-2 border-white/30 truncate">
                   <span className="text-xl sm:text-2xl font-bold">{p[0] && p[0].toUpperCase()}</span>
                 </div>
+                {/* UX-6: Only removes from local session list, NOT from DB */}
                 <button 
-                  onClick={() => removePlayer(p)}
-                  className="absolute -top-2 -right-1 bg-red-500 rounded-full p-1 shadow-lg hover:scale-110 active:scale-95 transition-transform"
+                  onClick={() => removeFromSetup(p)}
+                  className="absolute -top-2 -right-1 bg-white/20 hover:bg-red-500 rounded-full p-1 shadow-lg hover:scale-110 active:scale-95 transition-all"
+                  title="Remover da sessão atual"
                 >
                   <span className="material-symbols-outlined text-[10px]">close</span>
                 </button>
@@ -131,10 +172,25 @@ export function SetupScreen({ players, addPlayer, removePlayer, teamA, setTeamA,
         </div>
 
         <div className="fixed bottom-20 left-0 right-0 p-6 portal-gradient backdrop-blur-sm z-40 pb-6 rounded-t-3xl">
-          <div className="max-w-md mx-auto">
+          <div className="max-w-md mx-auto flex flex-col gap-3">
+
+            {/* UX-1: Sortear como CTA principal */}
+            <button
+              onClick={shuffleAndGo}
+              disabled={players.length < 4}
+              className={`btn-shimmer w-full py-4 rounded-2xl flex items-center justify-center gap-3 transition-all relative ${
+                players.length >= 4
+                  ? "bg-[var(--neon-green)] shadow-[0_10px_40px_-10px_rgba(198,255,0,0.5)] active:scale-95 text-black"
+                  : "bg-white/20 text-white/50 cursor-not-allowed pointer-events-none"
+              }`}
+            >
+              <span className="material-symbols-outlined font-black text-2xl">shuffle</span>
+              <span className="heading-font text-lg font-black italic">SORTEAR DUPLAS</span>
+            </button>
+
+            {/* Botão manual de escolha */}
             <button 
               onClick={() => {
-                // Fix #4: Clear teams before entering step 1
                 setTeamA([]);
                 setTeamB([]);
                 setBench([...players]);
@@ -142,15 +198,22 @@ export function SetupScreen({ players, addPlayer, removePlayer, teamA, setTeamA,
                 setSelectingFor("A");
               }}
               disabled={players.length < 4}
-              className={`btn-shimmer w-full py-5 rounded-2xl flex items-center justify-center gap-4 transition-all relative ${
+              className={`w-full py-3 rounded-2xl flex items-center justify-center gap-2 transition-all border ${
                 players.length >= 4 
-                  ? "bg-[var(--neon-green)] shadow-[0_10px_40px_-10px_rgba(198,255,0,0.5)] active:scale-95 text-black" 
-                  : "bg-white/20 text-white/50 cursor-not-allowed pointer-events-none"
+                  ? "border-white/20 text-white/70 hover:bg-white/10 active:scale-95" 
+                  : "border-white/5 text-white/20 cursor-not-allowed pointer-events-none"
               }`}
             >
-              <span className="heading-font text-xl font-black italic">MONTAR DUPLAS</span>
-              {players.length >= 4 && <span className="material-symbols-outlined text-black font-black text-3xl">bolt</span>}
+              <span className="material-symbols-outlined text-[18px]">group_work</span>
+              <span className="text-sm font-bold uppercase tracking-wider">Montar Manualmente</span>
             </button>
+
+            {/* UX-2: contador de jogadores */}
+            {players.length < 4 && (
+              <p className="text-center text-white/40 text-xs tracking-wider">
+                {players.length}/4 jogadores — adicione mais {4 - players.length} para começar
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -203,7 +266,8 @@ export function SetupScreen({ players, addPlayer, removePlayer, teamA, setTeamA,
       </div>
 
       <div className="mb-8">
-        <div className="text-white/50 text-xs font-bold uppercase tracking-widest mb-3">Banco (Toque para adicionar)</div>
+        {/* UX-13: Renamed label from "Banco" to clearer term */}
+        <div className="text-white/50 text-xs font-bold uppercase tracking-widest mb-3">Aguardando → Tap para adicionar</div>
         <div className="flex flex-wrap gap-2">
           {bench.map(p => (
             <button 

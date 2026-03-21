@@ -67,8 +67,23 @@ export function RankingScreen({ rankingRows, matchHistory, todayMatches, todayRa
         {tab !== 'history' && (
           <section className="bg-card rounded-[2rem] p-4 shadow-2xl border border-white/5 animate-fadeIn">
             <div className="text-xs font-bold text-neon-green tracking-wide mb-2 px-2">JOGADORES</div>
-            <Podium items={sortedPlayers} isDuo={false} />
-            <RankingList items={sortedPlayers} isDuo={false} />
+            {/* UX-9: Empty state for today tab */}
+            {sortedPlayers.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 py-8 text-center">
+                <span className="text-4xl">🏖️</span>
+                <p className="text-white/50 text-sm">
+                  {tab === 'today' ? 'Nenhuma partida registrada hoje.' : 'Nenhuma partida registrada.'}
+                </p>
+                {tab === 'today' && (
+                  <p className="text-white/30 text-xs">Comece uma sessão na aba Sessão!</p>
+                )}
+              </div>
+            ) : (
+              <>
+                <Podium items={sortedPlayers} isDuo={false} />
+                <RankingList items={sortedPlayers} isDuo={false} />
+              </>
+            )}
           </section>
         )}
 

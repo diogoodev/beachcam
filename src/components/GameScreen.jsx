@@ -13,6 +13,10 @@ export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, po
   const [remoteEnabled, setRemoteEnabled] = useState(false);
   const [confirmEndSession, setConfirmEndSession] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  // UX-8: serve indicator — null = none, 'A' or 'B'
+  const [servingTeam, setServingTeam] = useState(null);
+
+  const toggleServe = (team) => setServingTeam(prev => prev === team ? null : team);
 
   // ── Remote Control (Smartwatch / Second device) ──
   const onPointA = useCallback(() => addPoint("A"), [addPoint]);
@@ -274,7 +278,15 @@ export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, po
             <h1 className="text-xl md:text-3xl font-black tracking-[0.2em] md:tracking-[0.3em] uppercase opacity-90 text-center px-4 line-clamp-2">
               {teamA.join(" & ")}
             </h1>
-            <div className="flex gap-3 relative">
+            <div className="flex items-center gap-3 relative">
+              {/* UX-8: Serve indicator for Team A */}
+              <button
+                onClick={() => toggleServe('A')}
+                className={`text-xs transition-all ${servingTeam === 'A' ? 'text-[var(--neon-blue)] scale-110' : 'text-white/20 hover:text-white/40'}`}
+                title={servingTeam === 'A' ? 'Sacar: Dupla A (toque para alterar)' : 'Marcar saque para Dupla A'}
+              >
+                🏐
+              </button>
               {renderSetDots(setsA).map((isActive, idx) => (
                 <div key={idx} className={`set-dot ${isActive ? 'dot-blue-active' : 'dot-blue'}`}></div>
               ))}
@@ -316,10 +328,10 @@ export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, po
               <span className="digit-text team-blue-text">{digitsA[1]}</span>
             </div>
             
-            {/* Undo button (appears inside block on active interaction, or floats beside) */}
+            {/* UX-3: undo opacity raised from 30 to 60 */}
             <button 
                onClick={(e) => { e.stopPropagation(); removePoint("A"); }}
-               className="absolute -right-4 -bottom-4 bg-black/80 border border-white/20 text-white p-3 rounded-full flex items-center justify-center opacity-30 hover:opacity-100 active:scale-95 transition-all z-20 backdrop-blur-md"
+               className="absolute -right-4 -bottom-4 bg-black/80 border border-white/20 text-white p-3 rounded-full flex items-center justify-center opacity-60 hover:opacity-100 active:scale-95 transition-all z-20 backdrop-blur-md"
                aria-label={`Desfazer ponto da dupla ${teamA.join(' e ')}`}
                title="Desfazer Ponto"
             >
@@ -354,10 +366,10 @@ export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, po
               <span className="digit-text team-green-text">{digitsB[1]}</span>
             </div>
 
-            {/* Undo button */}
+            {/* UX-3: undo opacity raised from 30 to 60 */}
             <button 
                onClick={(e) => { e.stopPropagation(); removePoint("B"); }}
-               className="absolute -left-4 -bottom-4 bg-black/80 border border-white/20 text-white p-3 rounded-full flex items-center justify-center opacity-30 hover:opacity-100 active:scale-95 transition-all z-20 backdrop-blur-md"
+               className="absolute -left-4 -bottom-4 bg-black/80 border border-white/20 text-white p-3 rounded-full flex items-center justify-center opacity-60 hover:opacity-100 active:scale-95 transition-all z-20 backdrop-blur-md"
                aria-label={`Desfazer ponto da dupla ${teamB.join(' e ')}`}
                title="Desfazer Ponto"
             >
@@ -365,22 +377,18 @@ export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, po
             </button>
           </div>
           <div className="flex flex-col items-center gap-2">
-            <div className="flex gap-3 relative">
-              {/* Revert Set Button */}
-              {setsA + setsB > 0 && !matchWinner && (
-                <button
-                  onClick={revertSet}
-                  className="absolute -left-10 top-1/2 -translate-y-1/2 p-2 text-white/30 hover:text-[var(--neon-green)] transition-colors active:scale-90 flex items-center justify-center transform -scale-x-100"
-                  title="Reverter último set"
-                  aria-label="Reverter último set"
-                >
-                  <span className="material-symbols-outlined text-[18px]">history</span>
-                </button>
-              )}
-              
+            <div className="flex items-center gap-3 relative">
+              {/* UX-8: Serve indicator for Team B */}
               {renderSetDots(setsB).map((isActive, idx) => (
                 <div key={idx} className={`set-dot ${isActive ? 'dot-green-active' : 'dot-green'}`}></div>
               ))}
+              <button
+                onClick={() => toggleServe('B')}
+                className={`text-xs transition-all ${servingTeam === 'B' ? 'text-[var(--neon-green)] scale-110' : 'text-white/20 hover:text-white/40'}`}
+                title={servingTeam === 'B' ? 'Sacar: Dupla B (toque para alterar)' : 'Marcar saque para Dupla B'}
+              >
+                🏐
+              </button>
             </div>
             <h2 className="text-xl md:text-3xl font-black tracking-[0.2em] md:tracking-[0.3em] uppercase opacity-90 text-center px-4 line-clamp-2">
               {teamB.join(" & ")}
@@ -454,6 +462,10 @@ export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, po
           teamA={teamA} teamB={teamB}
           cancelMatch={() => {
             cancelMatch();
+            setIsSettingsOpen(false);
+          }}
+          endSession={() => {
+            endSession();
             setIsSettingsOpen(false);
           }}
           onClose={() => setIsSettingsOpen(false)}

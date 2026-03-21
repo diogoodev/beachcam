@@ -35,6 +35,7 @@ export function SessionDashboard(props) {
       players={players} addPlayer={addPlayer} removePlayer={removePlayer}
       teamA={teamA} setTeamA={setTeamA} teamB={teamB} setTeamB={setTeamB}
       bench={bench} setBench={setBench} startGame={startGame}
+      rankingRows={rankingRows}
     />
   );
 }

@@ -69,6 +69,9 @@ export function useMatchScoring(onSyncRef, onUnsaveRef) {
       if (newSA >= currentSetsToWin || newSB >= currentSetsToWin) {
         mw = newSA >= currentSetsToWin ? "A" : "B";
         setMatchWinner(mw);
+        vibrate([80, 60, 80, 60, 150]); // UX-12: match win pattern
+      } else {
+        vibrate([50, 40, 100]); // UX-12: set win pattern (distinct from point tap)
       }
       onSyncRef.current?.({ pointIdxA: 0, pointIdxB: 0, setsA: newSA, setsB: newSB, matchWinner: mw });
     } else {

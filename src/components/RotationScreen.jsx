@@ -42,6 +42,7 @@ export function RotationScreen({ teamA, teamB, setsA, setsB, bench, sortedBench,
       
       {/* Header */}
       <header className="mb-6 flex items-center gap-3">
+        {/* UX-7: Only show back button when coming from game (active match) */}
         <button onClick={() => setScreen("game")} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors flex items-center justify-center backdrop-blur-md">
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
@@ -160,8 +161,16 @@ export function RotationScreen({ teamA, teamB, setsA, setsB, bench, sortedBench,
           {!showFullBench ? (
             <div className="flex avatar-stack overflow-x-auto pb-1 custom-scrollbar">
               {sortedBenchDisplay.length > 0 ? sortedBenchDisplay.map((p, i) => (
-                <div key={p} className="w-12 h-12 shrink-0 rounded-full border-[1.5px] border-white flex items-center justify-center bg-card text-white text-sm font-bold relative shadow-lg" style={{ zIndex: 50 - i }}>
-                  {getInitials(p)}
+                <div key={p} className="relative w-12 h-12 shrink-0" style={{ zIndex: 50 - i }}>
+                  <div className="w-12 h-12 rounded-full border-[1.5px] border-white flex items-center justify-center bg-card text-white text-sm font-bold shadow-lg">
+                    {getInitials(p)}
+                  </div>
+                  {/* UX-4: Position badge on first two */}
+                  {i < 2 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--neon-orange)] text-black text-[8px] font-black flex items-center justify-center leading-none">
+                      {i + 1}
+                    </span>
+                  )}
                 </div>
               )) : (
                 <div className="text-sm text-gray-sub italic">Ninguém na fila</div>

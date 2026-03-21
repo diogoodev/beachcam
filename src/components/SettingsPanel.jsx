@@ -98,9 +98,10 @@ export function SettingsPanel({ players, removePlayer, resetRanking, teamA = [],
             )}
           </section>
 
-          {/* App Info */}
           <section className="text-center mt-4">
-            <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">BeachCam OS v4.1</p>
+            <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">
+              BeachCam {import.meta.env.VITE_APP_VERSION ?? 'v4.1'}
+            </p>
           </section>
         </div>
       </div>
