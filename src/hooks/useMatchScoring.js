@@ -141,7 +141,8 @@ export function useMatchScoring(onSyncRef, onUnsaveRef) {
     if (team === "A" && pointIdxA === 0) return;
     if (team === "B" && pointIdxB === 0) return;
     
-    // Remove the log entry and revert the point
+    // Remove the log entry FIRST, then revert the point
+    // (important: if removePoint's guard fires, the log would be stale otherwise)
     setGameLog(prev => prev.filter((_, i) => i !== idx));
     removePoint(team);
   }, [gameLog, pointIdxA, pointIdxB, removePoint, setGameLog]);

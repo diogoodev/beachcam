@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export function SettingsPanel({ players, removePlayer, resetRanking, onClose }) {
+export function SettingsPanel({ players, removePlayer, resetRanking, teamA = [], teamB = [], bench = [], onClose }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const [playerToDelete, setPlayerToDelete] = useState(null);
 
@@ -31,14 +31,27 @@ export function SettingsPanel({ players, removePlayer, resetRanking, onClose }) 
             <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden max-h-[30vh] overflow-y-auto">
               {players.length === 0 ? (
                 <div className="p-4 text-center text-white/50 text-xs">Nenhum jogador no banco de dados.</div>
-              ) : (
-                players.map(p => (
-                  <div key={p} className="flex items-center justify-between p-3 border-b border-white/5 last:border-0 group hover:bg-white/5 transition-colors">
-                    <span className="font-bold text-sm">{p}</span>
+              ) : players.map(p => {
+                const isInSession = [...teamA, ...teamB, ...bench].includes(p);
+                return (
+                  <div key={p} className="flex items-center justify-between p-3 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm">{p}</span>
+                      {isInSession && (
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-yellow-400 bg-yellow-400/10 px-1.5 py-0.5 rounded-full border border-yellow-400/20">
+                          em sessão
+                        </span>
+                      )}
+                    </div>
                     {playerToDelete === p ? (
-                      <div className="flex gap-2">
-                        <button onClick={() => { removePlayer(p); setPlayerToDelete(null); }} className="text-xs bg-red-500/20 text-red-400 px-3 py-1 rounded-lg font-bold">Confirmar</button>
-                        <button onClick={() => setPlayerToDelete(null)} className="text-xs bg-white/10 text-white px-3 py-1 rounded-lg">Cancelar</button>
+                      <div className="flex flex-col gap-1 items-end">
+                        {isInSession && (
+                          <span className="text-yellow-400 text-[9px] font-bold">Jogador ainda em quadra/fila!</span>
+                        )}
+                        <div className="flex gap-2">
+                          <button onClick={() => { removePlayer(p); setPlayerToDelete(null); }} className="text-xs bg-red-500/20 text-red-400 px-3 py-1 rounded-lg font-bold">Confirmar</button>
+                          <button onClick={() => setPlayerToDelete(null)} className="text-xs bg-white/10 text-white px-3 py-1 rounded-lg">Cancelar</button>
+                        </div>
                       </div>
                     ) : (
                       <button onClick={() => setPlayerToDelete(p)} className="text-white/30 hover:text-red-400 transition-colors p-1">
@@ -46,8 +59,8 @@ export function SettingsPanel({ players, removePlayer, resetRanking, onClose }) 
                       </button>
                     )}
                   </div>
-                ))
-              )}
+                );
+              })}
             </div>
             <p className="text-[10px] text-white/40 text-center uppercase tracking-widest mt-1">Excluir removerá o jogador do banco de dados.</p>
           </section>

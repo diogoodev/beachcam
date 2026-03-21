@@ -115,8 +115,8 @@ export default function App() {
           <span className="text-[10px] font-bold uppercase tracking-widest">Sessão</span>
         </button>
 
-        {/* Live Match / Current Match button */}
-        {(h.screen === "game" || (Array.isArray(h.teamA) && h.teamA.length > 0) || (h.activeLiveMatch && h.activeLiveMatch.screen === "game")) && (
+        {/* Live Match button — only show when a game is actually in progress or there's a live remote match */}
+        {(h.screen === "game" || (Array.isArray(h.teamA) && h.teamA.length > 0 && h.screen !== "session") || (h.activeLiveMatch && h.activeLiveMatch.screen === "game")) && (
           <button 
             onClick={() => {
               if (h.screen === "game") return;
@@ -130,28 +130,29 @@ export default function App() {
             {h.screen === "game" && <div className="w-1 h-1 rounded-full bg-[var(--neon-green)] mt-[-2px]"></div>}
           </button>
         )}
-          
-          <button 
-            onClick={() => h.setScreen("ranking")}
-            className={`flex flex-col items-center gap-1 transition-colors ${h.screen === "ranking" ? "text-[var(--neon-blue)]" : "text-white/50 hover:text-white"}`}
-          >
-            <span className="material-symbols-outlined text-2xl">leaderboard</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest">Ranking</span>
-          </button>
 
-          <button 
-            onClick={() => setIsSettingsOpen(true)}
-            className="flex flex-col items-center gap-1 transition-colors text-white/50 hover:text-white"
-          >
-            <span className="material-symbols-outlined text-2xl">settings</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest">Config</span>
-          </button>
-        </nav>
+        <button 
+          onClick={() => h.setScreen("ranking")}
+          className={`flex flex-col items-center gap-1 transition-colors ${h.screen === "ranking" ? "text-[var(--neon-blue)]" : "text-white/50 hover:text-white"}`}
+        >
+          <span className="material-symbols-outlined text-2xl">leaderboard</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest">Ranking</span>
+        </button>
+
+        <button 
+          onClick={() => setIsSettingsOpen(true)}
+          className="flex flex-col items-center gap-1 transition-colors text-white/50 hover:text-white"
+        >
+          <span className="material-symbols-outlined text-2xl">settings</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest">Config</span>
+        </button>
+      </nav>
       {/* SETTINGS BOTTOM SHEET */}
       {isSettingsOpen && (
         <SettingsPanel 
           players={h.players} removePlayer={h.removePlayer}
           resetRanking={h.resetRanking}
+          teamA={h.teamA} teamB={h.teamB} bench={h.bench}
           onClose={() => setIsSettingsOpen(false)} 
         />
       )}

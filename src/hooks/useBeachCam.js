@@ -150,18 +150,30 @@ export function useBeachCam() {
     const onCourt = [...rotation.teamA, ...rotation.teamB];
     const newBench = [...onCourt, ...rotation.bench];
 
+    // Revert gamesPlayed for on-court players (undo the increment from startGame)
+    const newGP = { ...rotation.gamesPlayed };
+    const newBS = { ...rotation.benchSince };
+    for (const p of onCourt) {
+      if (newGP[p] > 0) newGP[p] -= 1;
+      // Put them at the front of the bench wait queue
+      newBS[p] = 0;
+    }
+
     flushSync(() => {
       rotation._setters.setTeamA([]);
       rotation._setters.setTeamB([]);
       rotation._setters.setBench(newBench);
+      rotation._setters.setGamesPlayed(newGP);
+      rotation._setters.setBenchSince(newBS);
       rotation._setters.setScreen("session");
     });
     
     const overrides = {
-      teamA: [], teamB: [], bench: newBench, screen: "session"
+      teamA: [], teamB: [], bench: newBench, screen: "session",
+      gamesPlayed: newGP, benchSince: newBS,
     };
     onSyncRef.current?.(overrides);
-  }, [rotation.teamA, rotation.teamB, rotation.bench, scoring, rotation._setters, onSyncRef]);
+  }, [rotation.teamA, rotation.teamB, rotation.bench, rotation.gamesPlayed, rotation.benchSince, scoring, rotation._setters, onSyncRef]);
 
   // ── Return the same public API as the original hook ──
   return {
