@@ -3,8 +3,11 @@ import { SetupScreen } from './SetupScreen';
 import { RotationScreen } from './RotationScreen';
 
 export function SessionDashboard(props) {
-  const { teamA } = props;
-  const isSessionActive = Array.isArray(teamA) && teamA.length > 0;
+  const { teamA, screen } = props;
+  // Use screen === 'game' as the true signal that a match started.
+  // Using teamA.length > 0 caused SessionDashboard to intercept mid-way
+  // through manual team selection in SetupScreen Step 1.
+  const isSessionActive = screen === 'game' || (Array.isArray(teamA) && teamA.length > 0 && Array.isArray(props.teamB) && props.teamB.length > 0);
 
   // Extract only what each screen needs, avoiding prop pollution
   const {

@@ -60,7 +60,7 @@ export function SubstitutionSheet({ teamA, teamB, sortedBench, substitutePlayer,
                 <div className="text-[9px] text-[var(--neon-green)] font-bold text-center uppercase tracking-wider">Dupla 2</div>
                 {teamB.map(p => (
                   <button
-                    key={`out-${p}`}
+                    key={`out-b-${p}`}
                     onClick={() => setSelectedOut(p)}
                     className={`flex items-center gap-2 p-2 rounded-xl transition-all border ${selectedOut === p ? 'bg-[var(--neon-green)]/20 border-[var(--neon-green)] shadow-[0_0_10px_rgba(198,255,0,0.3)]' : 'bg-white/5 border-transparent hover:bg-white/10'}`}
                   >

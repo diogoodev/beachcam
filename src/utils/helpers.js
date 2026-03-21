@@ -7,7 +7,7 @@ export const getInitials = (name) => {
 
 /**
  * Trigger haptic feedback if available.
- * @param {number} ms - vibration duration in milliseconds (default 50)
+ * @param {number|number[]} ms - vibration duration in ms, or an array pattern [vibrate, pause, vibrate, ...]
  */
 export const vibrate = (ms = 50) => {
   if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(ms);

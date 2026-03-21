@@ -11,9 +11,10 @@ export function AddPlayerSheet({ players, bench, addPlayerMidGame, onClose, sort
   }, []);
 
   const handleAddPlayer = async () => {
-    const trimmed = newPlayerName.trim();
+    const trimmed = newPlayerName.trim().toUpperCase();
     if (!trimmed || adding) return;
-    if (players.includes(trimmed)) {
+    // Normalise to upper-case before comparing — the input already forces uppercase
+    if (players.some(p => p.toUpperCase() === trimmed)) {
       setNewPlayerName("");
       return;
     }

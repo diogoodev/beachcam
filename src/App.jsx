@@ -82,6 +82,7 @@ export default function App() {
           bench={h.bench} setBench={h.setBench} startGame={h.startGame}
           setsA={h.setsA} setsB={h.setsB} sortedBench={h.sortedBench}
           gamesPlayed={h.gamesPlayed} rankingRows={h.rankingRows}
+          screen={h.screen}
           setScreen={h.setScreen} reorderBench={h.reorderBench} endSession={h.endSession}
           removePlayerFromBench={h.removePlayerFromBench} promotePlayersToNext={h.promotePlayersToNext}
           addPlayerMidGame={h.addPlayerMidGame}
