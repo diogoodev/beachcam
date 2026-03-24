@@ -2,25 +2,27 @@ import React from 'react';
 import { SetupScreen } from './SetupScreen';
 import { RotationScreen } from './RotationScreen';
 
+/**
+ * SessionDashboard — renders the non-game views for the Sessão tab.
+ * App.jsx handles routing to GameScreen when h.screen === 'game'.
+ * This component only needs to decide between SetupScreen and RotationScreen.
+ */
 export function SessionDashboard(props) {
-  const { teamA, screen } = props;
-  // Use screen === 'game' as the true signal that a match started.
-  // Using teamA.length > 0 caused SessionDashboard to intercept mid-way
-  // through manual team selection in SetupScreen Step 1.
-  const isSessionActive = screen === 'game' || (Array.isArray(teamA) && teamA.length > 0 && Array.isArray(props.teamB) && props.teamB.length > 0);
-  // A match is "active" only when both teams are fully formed (not just navigated away)
-  const isMatchActive = Array.isArray(teamA) && teamA.length > 0 && Array.isArray(props.teamB) && props.teamB.length > 0;
+  const { teamA, teamB } = props;
 
-  // Extract only what each screen needs, avoiding prop pollution
+  // A match is "active" (has teams on court) — show rotation status
+  const isMatchActive = Array.isArray(teamA) && teamA.length > 0
+                     && Array.isArray(teamB) && teamB.length > 0;
+
   const {
     players, addPlayer, removePlayer,
-    setTeamA, teamB, setTeamB, bench, setBench, startGame,
+    setTeamA, setTeamB, bench, setBench, startGame,
     setsA, setsB, sortedBench, gamesPlayed, rankingRows,
     setScreen, reorderBench, endSession,
     removePlayerFromBench, promotePlayersToNext, addPlayerMidGame,
   } = props;
 
-  if (isSessionActive) {
+  if (isMatchActive) {
     return (
       <RotationScreen
         teamA={teamA} teamB={teamB} setsA={setsA} setsB={setsB}
@@ -35,7 +37,7 @@ export function SessionDashboard(props) {
       />
     );
   }
-  
+
   return (
     <SetupScreen
       players={players} addPlayer={addPlayer} removePlayer={removePlayer}
