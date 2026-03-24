@@ -65,16 +65,31 @@ export default function App() {
       {/* MAIN CONTENT */}
       <main className="relative pt-24 pb-32">
 
-        {/* Live match banner — visible on any non-session tab when a match is active */}
+        {/* Live match banner — Bento card visible on any non-session tab when a match is active */}
         {activeTab !== "session" && isMatchLive && (
-          <button
-            onClick={() => setActiveTab("session")}
-            className="w-full flex items-center justify-center gap-2 bg-[var(--neon-green)]/10 border-b border-[var(--neon-green)]/20 px-4 py-2.5 text-[var(--neon-green)] font-bold text-xs uppercase tracking-widest hover:bg-[var(--neon-green)]/15 transition-colors"
-          >
-            <div className="w-2 h-2 rounded-full bg-[var(--neon-green)] animate-pulse shadow-[0_0_6px_var(--neon-green)]" />
-            Partida em andamento — toque para ver
-            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-          </button>
+          <div className="px-4 pt-2 pb-1">
+            <button
+              onClick={() => setActiveTab("session")}
+              className="cursor-pointer group w-full flex items-center gap-4 bg-white/5 backdrop-blur-md border border-[var(--neon-green)]/25 rounded-2xl px-5 py-4 hover:bg-[var(--neon-green)]/10 hover:border-[var(--neon-green)]/50 active:scale-[0.98] transition-all duration-200 shadow-[0_0_24px_rgba(198,255,0,0.08)] overflow-hidden relative"
+            >
+              {/* Glow sweep */}
+              <div className="absolute inset-0 bg-gradient-to-r from-[var(--neon-green)]/0 via-[var(--neon-green)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+              <div className="shrink-0 relative z-10 bg-[var(--neon-green)]/15 group-hover:bg-[var(--neon-green)]/25 border border-[var(--neon-green)]/30 rounded-xl p-2.5 transition-colors">
+                <span className="material-symbols-outlined text-[var(--neon-green)] text-[22px]">sports_tennis</span>
+              </div>
+
+              <div className="flex-1 text-left relative z-10">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--neon-green)] animate-pulse shadow-[0_0_6px_var(--neon-green)]" />
+                  <span className="text-[10px] text-[var(--neon-green)] font-black uppercase tracking-widest">Partida em andamento</span>
+                </div>
+                <p className="text-white font-black text-base leading-tight">Toque para voltar ao jogo</p>
+              </div>
+
+              <span className="material-symbols-outlined text-white/30 group-hover:text-[var(--neon-green)] transition-colors relative z-10 text-[20px]">chevron_right</span>
+            </button>
+          </div>
         )}
 
         {/* SESSION TAB: routes internally between Setup → Rotation → Game */}

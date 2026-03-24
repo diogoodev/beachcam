@@ -40,25 +40,45 @@ export function RotationScreen({ teamA, teamB, setsA, setsB, bench, sortedBench,
   return (
     <div className="min-h-screen p-4 md:p-6 pb-24 flex flex-col pt-8 text-white relative z-10">
       
-      {/* Header */}
-      <header className="mb-6 flex items-center gap-3">
-        {/* UX-7: Only show back button when a match is active */}
-        {isMatchActive && (
-          <button onClick={() => setScreen("game")} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors flex items-center justify-center backdrop-blur-md">
-            <span className="material-symbols-outlined">arrow_back</span>
-          </button>
-        )}
-        <h1 className="text-3xl font-bold tracking-tight">Status da Partida</h1>
-
-        {/* Botão + Jogador */}
+      {/* Header — título centralizado */}
+      <header className="mb-6 relative flex items-center justify-center min-h-[40px]">
+        <h1 className="text-2xl font-black tracking-tight text-center">Status da Partida</h1>
+        {/* Botão + Jogador — fixo no canto direito */}
         <button
           onClick={() => setShowAddPlayer(true)}
-          className="btn-shimmer ml-auto flex items-center gap-1.5 bg-[var(--neon-green)] text-black px-3 py-2 rounded-full font-black text-xs uppercase tracking-wider shadow-[0_0_16px_rgba(198,255,0,0.3)] active:scale-95 transition-all"
+          className="btn-shimmer absolute right-0 flex items-center gap-1.5 bg-[var(--neon-green)] text-black px-3 py-2 rounded-full font-black text-xs uppercase tracking-wider shadow-[0_0_16px_rgba(198,255,0,0.3)] active:scale-95 transition-all"
         >
           <span className="material-symbols-outlined text-[16px]">person_add</span>
           Jogador
         </button>
       </header>
+
+      {/* Bento Card — Voltar ao Jogo (só quando há partida ativa) */}
+      {isMatchActive && (
+        <button
+          onClick={() => setScreen("game")}
+          className="w-full cursor-pointer group mb-2 flex items-center gap-4 bg-white/5 backdrop-blur-md border border-[var(--neon-green)]/25 rounded-2xl px-5 py-4 hover:bg-[var(--neon-green)]/10 hover:border-[var(--neon-green)]/50 active:scale-[0.98] transition-all duration-200 shadow-[0_0_24px_rgba(198,255,0,0.08)] overflow-hidden relative"
+        >
+          {/* Glow sweep on hover */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[var(--neon-green)]/0 via-[var(--neon-green)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+          {/* Ícone animado */}
+          <div className="shrink-0 relative z-10 bg-[var(--neon-green)]/15 group-hover:bg-[var(--neon-green)]/25 border border-[var(--neon-green)]/30 rounded-xl p-2.5 transition-colors">
+            <span className="material-symbols-outlined text-[var(--neon-green)] text-[22px]">sports_tennis</span>
+          </div>
+
+          {/* Texto */}
+          <div className="flex-1 text-left relative z-10">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-[var(--neon-green)] animate-pulse shadow-[0_0_6px_var(--neon-green)]" />
+              <span className="text-[10px] text-[var(--neon-green)] font-black uppercase tracking-widest">Partida em andamento</span>
+            </div>
+            <p className="text-white font-black text-base leading-tight">Voltar ao Jogo</p>
+          </div>
+
+          <span className="material-symbols-outlined text-white/30 group-hover:text-[var(--neon-green)] transition-colors relative z-10 text-[20px]">chevron_right</span>
+        </button>
+      )}
 
       <main className="flex flex-col gap-4">
         
