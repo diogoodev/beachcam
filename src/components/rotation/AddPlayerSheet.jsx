@@ -28,11 +28,11 @@ export function AddPlayerSheet({ players, bench, addPlayerMidGame, onClose, sort
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 animate-[fade-in_0.2s_ease-out]"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[80] animate-[fade-in_0.2s_ease-out]"
         onClick={onClose}
       />
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0f0f0f] border-t border-white/10 rounded-t-3xl p-6 pb-28 shadow-2xl animate-[slide-up_0.3s_ease-out]">
+      <div className="fixed bottom-0 left-0 right-0 z-[90] bg-[#0f0f0f] border-t border-white/10 rounded-t-3xl p-6 pb-28 shadow-2xl animate-[slide-up_0.3s_ease-out]">
         <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5" />
 
         <div className="text-xs font-bold text-[var(--neon-green)] tracking-widest uppercase mb-1">

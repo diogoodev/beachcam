@@ -102,8 +102,10 @@ export function useRotation(onSyncRef, resetScoringFn, players, bestOf) {
   }, [benchSince, onSyncRef, setBenchSince]);
 
   const startGame = useCallback((tA, tB, b) => {
+    // CM-3: Only initialise stats for players IN this session (tA + tB + bench).
+    // Seeding from the global `players` DB list would zero out absent players.
     const initGP = {}, initBS = {};
-    players.forEach(p => { initGP[p] = 0; initBS[p] = 0; });
+    [...tA, ...tB, ...b].forEach(p => { initGP[p] = 0; initBS[p] = 0; });
     [...tA, ...tB].forEach(p => { initGP[p] = 1; });
     setTeamA(tA); setTeamB(tB); setBench(b);
     setGamesPlayed(initGP); setBenchSince(initBS);

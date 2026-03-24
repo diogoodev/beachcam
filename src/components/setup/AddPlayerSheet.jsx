@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { getColorForName, getInitials } from '../../utils/helpers';
+import { getColorForName } from '../../utils/helpers';
 
 /**
  * Bottom-sheet for adding players to the current arena session.
@@ -36,12 +36,12 @@ export function AddPlayerSheet({ players, addPlayer, rankingRows = [], onClose }
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 animate-[fade-in_0.2s_ease-out]"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[80] animate-[fade-in_0.2s_ease-out]"
         onClick={onClose}
       />
 
-      {/* Sheet */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0f0f0f] border-t border-white/10 rounded-t-3xl p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-2xl animate-[slide-up_0.3s_ease-out]">
+      {/* Sheet — z-[90] so it sits above navbar (z-50) */}
+      <div className="fixed bottom-0 left-0 right-0 z-[90] bg-[#0f0f0f] border-t border-white/10 rounded-t-3xl p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-2xl animate-[slide-up_0.3s_ease-out]">
         <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5" />
 
         <div className="text-xs font-bold text-[var(--neon-green)] tracking-widest uppercase mb-1">
@@ -67,7 +67,7 @@ export function AddPlayerSheet({ players, addPlayer, rankingRows = [], onClose }
                       className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-black text-sm shadow-lg"
                       style={{ backgroundColor: color }}
                     >
-                      {getInitials(r.player_name)}
+                      {r.player_name.slice(0, 2)}
                     </div>
                     <span className="text-[9px] text-white/60 font-bold uppercase truncate max-w-[56px]">
                       {r.player_name.split(' ')[0]}

@@ -79,15 +79,15 @@ export function useBeachCam() {
       }
     }
 
-    if (rotation.screen === "game") {
-      applyRemoteState(st);
-    }
+    // CM-4: apply remote state regardless of active screen so scoreboard stays in sync
+    // when the user is browsing Ranking or Session tabs.
+    applyRemoteState(st);
   }, [applyRemoteState, sync.localTimestamp, rotation.screen, sync.setActiveLiveMatch]);
 
   // Keep the ref always pointing to the latest handleRemoteUpdate
   useEffect(() => {
     sync.handleRemoteUpdateRef.current = handleRemoteUpdate;
-  });
+  }, [handleRemoteUpdate]); // CR-2: add dep array — avoid stale ref on every render
 
   const joinLiveMatch = useCallback(() => {
     if (sync.activeLiveMatch) {
@@ -111,7 +111,8 @@ export function useBeachCam() {
   // ── Add player mid-game (bridges sync + rotation) ──
   const addPlayerMidGame = useCallback(async (name) => {
     const trimmed = name.trim().toUpperCase();
-    if (!trimmed || sync.players.includes(trimmed)) return;
+    // CR-1: normalize case when checking for duplicates — sync.players may be mixed case
+    if (!trimmed || sync.players.some(p => p.toUpperCase() === trimmed)) return;
 
     const success = await sync.addPlayerToList(trimmed);
     if (!success) return;

@@ -5,6 +5,7 @@ import { ShareSheet } from './ShareSheet';
 import { useRemoteControl } from '../hooks/useRemoteControl';
 import { ConfirmModal } from './ui/ConfirmModal';
 import { MatchSettingsModal } from './MatchSettingsModal';
+import { useLocalState } from '../hooks/useLocalState';
 import confetti from 'canvas-confetti';
 
 export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, pointIdxB, setsA, setsB, setsToWin, bestOf, setBestOf, cancelMatch, teamA, teamB, matchWinner, bench, sortedBench, doRotation, resetMatch, endSession, setScreen, revertSet, substitutePlayer, matchSetHistory = [] }) {
@@ -17,9 +18,9 @@ export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, po
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   // UX-8: serve indicator — null = none, 'A' or 'B'
   const [servingTeam, setServingTeam] = useState(null);
-  // Headphone Mode: which team is the "primary" for the play button
-  const [headphoneMode, setHeadphoneMode] = useState(false);
-  const [headphonePrimary, setHeadphonePrimary] = useState(null); // 'A' | 'B' | null
+  // CS-4: persist headphone mode so it survives page reloads
+  const [headphoneMode, setHeadphoneMode] = useLocalState('bc_headphoneMode', false);
+  const [headphonePrimary, setHeadphonePrimary] = useLocalState('bc_headphonePrimary', null);
 
   // D-1: Reset serving indicator when a new match starts (matchWinner cleared = new game)
   useEffect(() => {

@@ -120,7 +120,13 @@ export function useMatchScoring(onSyncRef, onUnsaveRef) {
       setMatchSaved(false);
     }
 
-    onSyncRef.current?.({ setsA: newSA, setsB: newSB, pointIdxA: restoredIdxA, pointIdxB: restoredIdxB, matchWinner: null });
+    // CR-3: only broadcast matchWinner:null when we actually cleared one — avoids
+    // incorrectly overwriting a still-valid remote winner state.
+    onSyncRef.current?.({
+      setsA: newSA, setsB: newSB,
+      pointIdxA: restoredIdxA, pointIdxB: restoredIdxB,
+      ...(matchWinner !== null ? { matchWinner: null } : {}),
+    });
   }, [setsA, setsB, matchWinner, matchSaved, matchSetHistory, onSyncRef, onUnsaveRef, setSetsA, setSetsB, setPointIdxA, setPointIdxB, setMatchSetHistory, setGameLog, setMatchWinner, setMatchSaved]);
 
   const resetMatch = useCallback((sync = true) => {
@@ -132,6 +138,8 @@ export function useMatchScoring(onSyncRef, onUnsaveRef) {
   }, [onSyncRef, setPointIdxA, setPointIdxB, setSetsA, setSetsB, setMatchWinner, setMatchSetHistory, setGameLog, setMatchSaved]);
 
   const undoLastPoint = useCallback(() => {
+    // CM-1: block undo when a match winner exists — prevents silent no-ops via MediaSession
+    if (matchWinner) return;
     if (!gameLog || gameLog.length === 0) return;
     // gameLog is newest-first. Find first "point" entry.
     const idx = gameLog.findIndex(event => event.type === 'point');
