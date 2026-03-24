@@ -8,6 +8,8 @@ export function SessionDashboard(props) {
   // Using teamA.length > 0 caused SessionDashboard to intercept mid-way
   // through manual team selection in SetupScreen Step 1.
   const isSessionActive = screen === 'game' || (Array.isArray(teamA) && teamA.length > 0 && Array.isArray(props.teamB) && props.teamB.length > 0);
+  // A match is "active" only when both teams are fully formed (not just navigated away)
+  const isMatchActive = Array.isArray(teamA) && teamA.length > 0 && Array.isArray(props.teamB) && props.teamB.length > 0;
 
   // Extract only what each screen needs, avoiding prop pollution
   const {
@@ -29,6 +31,7 @@ export function SessionDashboard(props) {
         promotePlayersToNext={promotePlayersToNext}
         addPlayerMidGame={addPlayerMidGame}
         players={players}
+        isMatchActive={isMatchActive}
       />
     );
   }

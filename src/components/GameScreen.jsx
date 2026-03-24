@@ -13,14 +13,24 @@ export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, po
   const [showRemotePanel, setShowRemotePanel] = useState(false);
   const [remoteEnabled, setRemoteEnabled] = useState(false);
   const [confirmEndSession, setConfirmEndSession] = useState(false);
+  const [confirmRevanche, setConfirmRevanche] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   // UX-8: serve indicator — null = none, 'A' or 'B'
   const [servingTeam, setServingTeam] = useState(null);
+  // Headphone Mode: which team is the "primary" for the play button
+  const [headphoneMode, setHeadphoneMode] = useState(false);
+  const [headphonePrimary, setHeadphonePrimary] = useState(null); // 'A' | 'B' | null
 
   // D-1: Reset serving indicator when a new match starts (matchWinner cleared = new game)
   useEffect(() => {
     if (!matchWinner) setServingTeam(null);
   }, [matchWinner]);
+
+  // A-1: Auto-reset serve indicator when a new set begins
+  const totalSets = setsA + setsB;
+  useEffect(() => {
+    setServingTeam(null);
+  }, [totalSets]);
 
   // E-3: Neon confetti burst on match win
   useEffect(() => {
@@ -49,51 +59,51 @@ export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, po
     isActive: remoteEnabled && !matchWinner,
   });
 
-  // ── MediaSession API (Bluetooth headphones) ──
+  // ── MediaSession API — "Modo Headphone" ──
+  // Reimaginado: o usuário escolhe qual é a equipe "principal".
+  // play/pause → ponto para a equipe principal
+  // nexttrack (>>) → ponto para a equipe adversária
+  // previoustrack (<<) → desfazer último ponto
   const addPointRef = React.useRef(addPoint);
   const undoLastPointRef = React.useRef(undoLastPoint);
+  const headphonePrimaryRef = React.useRef(headphonePrimary);
   React.useEffect(() => { addPointRef.current = addPoint; }, [addPoint]);
   React.useEffect(() => { undoLastPointRef.current = undoLastPoint; }, [undoLastPoint]);
+  React.useEffect(() => { headphonePrimaryRef.current = headphonePrimary; }, [headphonePrimary]);
 
-  // NOTE: When matchWinner toggles rapidly (win → revert → win), this creates
-  // a new audio element each time. The cleanup function handles pausing/removing,
-  // so there's no real leak — just a brief re-initialization.
   useEffect(() => {
-    if (!('mediaSession' in navigator) || matchWinner) return;
+    if (!('mediaSession' in navigator) || matchWinner || !headphoneMode || !headphonePrimary) return;
 
-    // Need a silent audio context to enable MediaSession
     const audio = document.createElement('audio');
     audio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
     audio.loop = true;
-
-    const tryPlay = () => {
-      audio.play().catch(() => {});
-    };
+    const tryPlay = () => audio.play().catch(() => {});
     tryPlay();
     window.addEventListener('click', tryPlay, { once: true });
     window.addEventListener('touchend', tryPlay, { once: true });
 
     navigator.mediaSession.metadata = new MediaMetadata({
-      title: 'BeachCam Placar',
-      artist: 'Controle Remoto',
+      title: 'BeachCam — Modo Headphone',
+      artist: headphonePrimary === 'A' ? `Principal: ${teamA.join(' & ')}` : `Principal: ${teamB.join(' & ')}`,
     });
 
-    navigator.mediaSession.setActionHandler('play', () => addPointRef.current("A"));
-    navigator.mediaSession.setActionHandler('pause', () => addPointRef.current("B"));
+    const primary = () => headphonePrimaryRef.current;
+    const rival = () => primary() === 'A' ? 'B' : 'A';
+
+    navigator.mediaSession.setActionHandler('play',          () => addPointRef.current(primary()));
+    navigator.mediaSession.setActionHandler('pause',         () => addPointRef.current(primary()));
+    navigator.mediaSession.setActionHandler('nexttrack',     () => addPointRef.current(rival()));
     navigator.mediaSession.setActionHandler('previoustrack', () => undoLastPointRef.current());
-    navigator.mediaSession.setActionHandler('nexttrack', () => addPointRef.current("B"));
 
     return () => {
       audio.pause();
       audio.remove();
       window.removeEventListener('click', tryPlay);
       window.removeEventListener('touchend', tryPlay);
-      navigator.mediaSession.setActionHandler('play', null);
-      navigator.mediaSession.setActionHandler('pause', null);
-      navigator.mediaSession.setActionHandler('previoustrack', null);
-      navigator.mediaSession.setActionHandler('nexttrack', null);
+      ['play', 'pause', 'nexttrack', 'previoustrack'].forEach(a =>
+        navigator.mediaSession.setActionHandler(a, null));
     };
-  }, [matchWinner]); // Only re-run when match finishes/restarts
+  }, [matchWinner, headphoneMode, headphonePrimary, teamA, teamB]);
   
   const currentLabelA   = POINT_LABELS[POINT_SEQUENCE[pointIdxA]] ?? "0";
   const currentLabelB   = POINT_LABELS[POINT_SEQUENCE[pointIdxB]] ?? "0";
@@ -182,6 +192,60 @@ export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, po
             </div>
           )}
 
+          {/* Headphone Mode separator */}
+          <div className="h-px bg-white/10 my-3" />
+          <div className="text-white/50 font-bold uppercase tracking-widest text-[10px] mb-2">🎧 Modo Headphone</div>
+          {!headphoneMode ? (
+            <div className="flex flex-col gap-2">
+              <p className="text-white/40 text-[10px]">Controle o placar com os botões do fone Bluetooth. Escolha a dupla principal e use ▶ para pontuar.</p>
+              <button
+                onClick={() => setHeadphoneMode(true)}
+                className="w-full bg-white/10 border border-white/20 text-white px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider active:scale-95 transition-all"
+              >
+                Ativar Modo Headphone
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <p className="text-[9px] text-white/40 mb-1">Qual é a sua dupla? (botão ▶ marca ponto para ela)</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setHeadphonePrimary('A')}
+                  className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border ${
+                    headphonePrimary === 'A'
+                      ? 'bg-[var(--neon-blue)] text-black border-transparent shadow-[0_0_12px_rgba(0,245,255,0.4)]'
+                      : 'border-white/20 text-white/60 hover:bg-white/10'
+                  }`}
+                >
+                  {teamA[0]?.split(' ')[0] ?? 'A'}
+                </button>
+                <button
+                  onClick={() => setHeadphonePrimary('B')}
+                  className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border ${
+                    headphonePrimary === 'B'
+                      ? 'bg-[var(--neon-green)] text-black border-transparent shadow-[0_0_12px_rgba(198,255,0,0.4)]'
+                      : 'border-white/20 text-white/60 hover:bg-white/10'
+                  }`}
+                >
+                  {teamB[0]?.split(' ')[0] ?? 'B'}
+                </button>
+              </div>
+              {headphonePrimary && (
+                <div className="bg-white/5 rounded-xl p-3 border border-white/10 text-[9px] text-white/50 space-y-1.5 mt-1">
+                  <div className="flex justify-between"><span>▶ Play / ⏸ Pause</span><span className="text-white font-bold">Ponto para sua dupla</span></div>
+                  <div className="flex justify-between"><span>⏭ Próxima faixa</span><span className="text-white font-bold">Ponto para adversário</span></div>
+                  <div className="flex justify-between"><span>⏮ Faixa anterior</span><span className="text-white font-bold">Desfazer último ponto</span></div>
+                </div>
+              )}
+              <button
+                onClick={() => { setHeadphoneMode(false); setHeadphonePrimary(null); }}
+                className="w-full bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider mt-1"
+              >
+                Desativar
+              </button>
+            </div>
+          )}
+
           <button onClick={() => setShowRemotePanel(false)} className="mt-3 w-full bg-white/10 border border-white/20 rounded-xl py-2 text-white/70 label-text">
             Fechar
           </button>
@@ -219,7 +283,7 @@ export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, po
               </button>
               <button 
                 className="btn-shimmer flex-1 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl py-4 font-bold uppercase transition-colors text-sm md:text-base"
-                onClick={() => resetMatch()}
+                onClick={() => setConfirmRevanche(true)}
               >
                 Revanche
               </button>
@@ -248,6 +312,20 @@ export function GameScreen({ addPoint, removePoint, undoLastPoint, pointIdxA, po
           </div>
         </div>
       )}
+
+      {/* Confirm Revanche Modal */}
+      <ConfirmModal
+        isOpen={confirmRevanche}
+        title="Jogar Revanche?"
+        message="O placar atual será apagado e a partida recomeça com as mesmas duplas."
+        confirmText="Jogar Revanche"
+        isDestructive={false}
+        onConfirm={() => {
+          resetMatch();
+          setConfirmRevanche(false);
+        }}
+        onCancel={() => setConfirmRevanche(false)}
+      />
 
       {/* Confirm End Session Modal */}
       <ConfirmModal

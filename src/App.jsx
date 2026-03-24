@@ -22,14 +22,7 @@ export default function App() {
     if (action === 'new') h.setScreen('session');
     else if (action === 'ranking') h.setScreen('ranking');
     
-    // 2. Share Target parameters
-    const sharedTitle = params.get('title');
-    const sharedText = params.get('text');
-    const sharedUrl = params.get('url');
-    if (sharedTitle || sharedText || sharedUrl) {
-      // Remove params from URL to avoid reprocessing on reload
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
+
 
     // 3. Protocol Handler parameters (web+beachcam://...?route=...)
     const route = params.get('route');

@@ -4,7 +4,7 @@ import { ConfirmModal } from './ui/ConfirmModal';
 import { AddPlayerSheet } from './rotation/AddPlayerSheet';
 import { OverrideSheet } from './rotation/OverrideSheet';
 
-export function RotationScreen({ teamA, teamB, setsA, setsB, bench, sortedBench, gamesPlayed, rankingRows, setScreen, reorderBench, removePlayerFromBench, promotePlayersToNext, addPlayerMidGame, players }) {
+export function RotationScreen({ teamA, teamB, setsA, setsB, bench, sortedBench, gamesPlayed, rankingRows, setScreen, reorderBench, removePlayerFromBench, promotePlayersToNext, addPlayerMidGame, players, isMatchActive }) {
   const [showFullBench, setShowFullBench] = useState(false);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
   const [showOverrideSheet, setShowOverrideSheet] = useState(false);
@@ -42,10 +42,12 @@ export function RotationScreen({ teamA, teamB, setsA, setsB, bench, sortedBench,
       
       {/* Header */}
       <header className="mb-6 flex items-center gap-3">
-        {/* UX-7: Only show back button when coming from game (active match) */}
-        <button onClick={() => setScreen("game")} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors flex items-center justify-center backdrop-blur-md">
-          <span className="material-symbols-outlined">arrow_back</span>
-        </button>
+        {/* UX-7: Only show back button when a match is active */}
+        {isMatchActive && (
+          <button onClick={() => setScreen("game")} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors flex items-center justify-center backdrop-blur-md">
+            <span className="material-symbols-outlined">arrow_back</span>
+          </button>
+        )}
         <h1 className="text-3xl font-bold tracking-tight">Status da Partida</h1>
 
         {/* Botão + Jogador */}
